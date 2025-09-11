@@ -3,4 +3,7 @@
     <string name="app_name">НМедиа</string>
     <string name="nmedia">НМедиа!</string>
     <string name="logo_netology">логотип_Нетологии</string>
+    <string name="menu">меню</string>
+    <string name="buttonfavorite">кнопка нравится</string>
+    <string name="sharebutton">кнопка поделится</string>
 </resources>

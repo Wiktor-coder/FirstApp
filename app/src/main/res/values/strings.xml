@@ -2,4 +2,7 @@
     <string name="app_name">NMedia</string>
     <string name="nmedia">NMedia!</string>
     <string name="logo_netology">logo_Netology</string>
+    <string name="menu">menu</string>
+    <string name="buttonfavorite">buttonFavorite</string>
+    <string name="sharebutton">shareButton</string>
 </resources>
