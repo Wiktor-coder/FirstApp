@@ -54,7 +54,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:contentDescription="@string/menu"
-        android:src="@drawable/ic_launcher_foreground"
+        android:src="@drawable/ic_52549_more_vert_icon"
         app:tint="?colorControlNormal" />
 
     <androidx.constraintlayout.widget.Barrier
