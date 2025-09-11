@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/common_space"
+    android:padding="24dp"
     tools:context=".MainActivity">
 
 
@@ -16,7 +16,8 @@
         android:contentDescription="@string/logo_netology"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@sample/posts.json/data/authorAvatar" />
+        android:src="@drawable/ic_netology__1_"
+        tools:srcCompact="@sample/posts.json/data/authorAvatar" />
 
     <TextView
         android:id="@+id/author"
@@ -31,6 +32,7 @@
         app:layout_constraintStart_toEndOf="@+id/avatar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/published"
+        android:text="@string/author"
         tools:text="@sample/posts.json/data/author" />
 
     <TextView
@@ -41,6 +43,7 @@
         app:layout_constraintEnd_toStartOf="@id/menu"
         app:layout_constraintStart_toEndOf="@+id/avatar"
         app:layout_constraintTop_toBottomOf="@id/author"
+        android:text="@string/published"
         tools:text="@sample/posts.json/data/published" />
 
     <ImageView
@@ -71,6 +74,7 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         tools:layout_editor_absoluteY="178dp"
+        android:text="@string/content"
         tools:text="@sample/posts.json/data/content" />
 
     <ImageButton
@@ -95,7 +99,7 @@
         app:layout_constraintTop_toBottomOf="@+id/content"
         app:tint="?colorControlNormal"
         tools:ignore="TextSizeCheck"
-        tools:text="150" />
+        android:text="150" />
 
     <ImageButton
         android:id="@+id/shareButton"
@@ -120,7 +124,7 @@
         app:layout_constraintStart_toEndOf="@+id/shareButton"
         app:layout_constraintTop_toBottomOf="@+id/content"
         app:tint="?colorControlNormal"
-        tools:text="84"/>
+        android:text="84"/>
 
     <ImageView
         android:id="@+id/visibility"
@@ -143,7 +147,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/content"
         app:tint="?colorControlNormal"
-        tools:text="116"/>
+        android:text="116"/>
 
 
 
