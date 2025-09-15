@@ -1,6 +1,7 @@
 package ru.netology.nmedia
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -67,7 +68,7 @@ class MainActivity : AppCompatActivity() {
                 v.paddingLeft,
                 v.paddingTop + systemBars.top,
                 v.paddingRight,
-                v.paddingBottom + systemBars.top
+                v.paddingBottom + systemBars.bottom
             )
             insets
         }
