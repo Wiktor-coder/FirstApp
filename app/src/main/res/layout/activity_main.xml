@@ -1,151 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/common_space"
+    android:orientation="vertical"
     tools:context=".activity.MainActivity">
 
-
-    <ImageView
-        android:id="@+id/avatar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:contentDescription="@string/logo_netology"
-        android:src="@drawable/ic_netology__1_"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompact="@sample/posts.json/data/authorAvatar" />
-
-    <TextView
-        android:id="@+id/author"
-        android:layout_width="0dp"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/common_space"
-        android:layout_marginBottom="8dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="@string/author"
-        app:layout_constraintBottom_toTopOf="@id/published"
-        app:layout_constraintEnd_toStartOf="@id/menu"
-        app:layout_constraintStart_toEndOf="@+id/avatar"
-        app:layout_constraintTop_toTopOf="@id/avatar"
-        app:layout_constraintVertical_chainStyle="packed"
-        tools:text="@sample/posts.json/data/author" />
-
-    <TextView
-        android:id="@+id/published"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/common_space"
-        android:text="@string/published"
-        app:layout_constraintBottom_toBottomOf="@id/avatar"
-        app:layout_constraintEnd_toStartOf="@id/menu"
-        app:layout_constraintStart_toEndOf="@+id/avatar"
-        app:layout_constraintTop_toBottomOf="@id/author"
-        tools:text="@sample/posts.json/data/published" />
-
-    <ImageView
-        android:id="@+id/menu"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:contentDescription="@string/menu"
-        android:src="@drawable/ic_52549_more_vert_icon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/author"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="?colorControlNormal" />
-
-    <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/topBarrier"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:barrierDirection="bottom"
-        app:constraint_referenced_ids="author,avatar,published" />
-
-    <TextView
-        android:id="@+id/content"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/common_space"
-        android:autoLink="all"
-        android:text="@string/content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topBarrier"
-        tools:text="@sample/posts.json/data/content" />
-
-    <ImageView
-        android:id="@+id/Like"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="@dimen/common_space"
-        android:contentDescription="@string/buttonfavorite"
-        android:src="@drawable/outline_favorite_24"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/content"/>
-
-    <TextView
-        android:id="@+id/numberOfLikes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="@dimen/common_space"
-        android:text=""
-        app:layout_constraintStart_toEndOf="@+id/Like"
-        app:layout_constraintTop_toBottomOf="@+id/content"
-        app:tint="?colorControlNormal"
-        tools:ignore="TextSizeCheck" />
-
-    <ImageView
-        android:id="@+id/Share"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="@dimen/common_space"
-        android:layout_marginTop="@dimen/common_space"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/sharebutton"
-        android:src="@drawable/icons8_share"
-        app:layout_constraintStart_toEndOf="@id/numberOfLikes"
-        app:layout_constraintTop_toBottomOf="@id/content"
-        app:tint="?colorControlNormal" />
-
-    <TextView
-        android:id="@+id/numberOfShare"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="@dimen/common_space"
-        android:text=""
-        app:layout_constraintStart_toEndOf="@+id/Share"
-        app:layout_constraintTop_toBottomOf="@+id/content"
-        app:tint="?colorControlNormal" />
-
-    <ImageView
-        android:id="@+id/visibility"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="@dimen/common_space"
-        android:layout_marginEnd="8dp"
-        android:contentDescription="@string/menu"
-        android:src="@drawable/visibility_fill__streamline_rounded_fill_material_symbols"
-        app:layout_constraintEnd_toStartOf="@id/numberOfVisibility"
-        app:layout_constraintTop_toBottomOf="@id/content"
-        app:tint="?colorControlNormal" />
-
-    <TextView
-        android:id="@+id/numberOfVisibility"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="@dimen/common_space"
-        android:text=""
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/content"
-        app:tint="?colorControlNormal" />
+        android:orientation="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:context=".activity.MainActivity"
+        tools:listitem="@layout/card_post" />
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

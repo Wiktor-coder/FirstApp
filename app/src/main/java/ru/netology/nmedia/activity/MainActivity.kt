@@ -9,7 +9,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import ru.netology.nmedia.viewmodel.PostViewModel
 import ru.netology.nmedia.R
+import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.databinding.ActivityMainBinding
+import ru.netology.nmedia.databinding.CardPostBinding
+import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.viewmodel.formatNumberCompact
 
 class MainActivity : AppCompatActivity() {
@@ -21,28 +24,42 @@ class MainActivity : AppCompatActivity() {
         applyInsets(binding.root)
 
         val viewModel by viewModels<PostViewModel>()
-        viewModel.get().observe(this) { post ->
-            with(binding) {
-                content.text = post.content
-                author.text = post.author
-                published.text = post.published
-                numberOfLikes.text = post.likeCount.formatNumberCompact()
-                numberOfShare.text = post.shareCount.formatNumberCompact()
-                Like.setImageResource(
-                    if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
-                        R.drawable.outline_favorite_24
-                )
 
-                Like.setOnClickListener {
-                    viewModel.like()
-                    numberOfLikes.text = viewModel.get().value?.likeCount?.formatNumberCompact()
-                }
+        val adapter = PostAdapter(likeClickListener = {
+            viewModel.likeById(it.id)
+        }, shareClickListener = {
+            viewModel.shareById(it.id)
+        })
+        binding.container.adapter = adapter
 
-                Share.setOnClickListener {
-                    viewModel.share()
-                    numberOfShare.text = viewModel.get().value?.shareCount?.formatNumberCompact()
-                }
-            }
+        viewModel.get().observe(this) { posts ->
+            adapter.submitList(posts) //ListAdapter
+            //adapter.data = posts
+//            binding.container.removeAllViews() //удаление элементов
+//
+//            posts.forEach { post ->
+//            with(CardPostBinding.inflate(layoutInflater, binding.container, true)) {
+//                content.text = post.content
+//                author.text = post.author
+//                published.text = post.published
+//                numberOfLikes.text = post.likeCount.formatNumberCompact()
+//                numberOfShare.text = post.shareCount.formatNumberCompact()
+//                Like.setImageResource(
+//                    if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
+//                        R.drawable.outline_favorite_24
+//                )
+//
+//                Like.setOnClickListener {
+//                    viewModel.likeById(post.id)
+//                    numberOfLikes.text = post.likeCount.formatNumberCompact() //viewModel.get().value?.likeCount?.formatNumberCompact()
+//                }
+//
+//                Share.setOnClickListener {
+//                    viewModel.shareById(post.id)
+//                    numberOfShare.text = post.shareCount.formatNumberCompact() //viewModel.get().value?.shareCount?.formatNumberCompact()
+//                }
+//            }
+//        }
         }
     }
 
