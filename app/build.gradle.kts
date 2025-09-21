@@ -17,7 +17,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildFeatures {
+    buildFeatures { //для создания binding
         viewBinding = true
     }
 

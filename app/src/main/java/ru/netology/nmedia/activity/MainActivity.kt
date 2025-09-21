@@ -25,11 +25,14 @@ class MainActivity : AppCompatActivity() {
 
         val viewModel by viewModels<PostViewModel>()
 
-        val adapter = PostAdapter(likeClickListener = {
+        val adapter = PostAdapter(
+            likeClickListener = {
             viewModel.likeById(it.id)
-        }, shareClickListener = {
+        },
+            shareClickListener = {
             viewModel.shareById(it.id)
-        })
+        }
+        )
         binding.container.adapter = adapter
 
         viewModel.get().observe(this) { posts ->
