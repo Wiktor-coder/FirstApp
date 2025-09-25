@@ -3,41 +3,38 @@ package ru.netology.nmedia.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.viewmodel.PostViewModel
 
-typealias likeClickListener = (post: Post) -> Unit
-typealias shareClickListener = (post: Post) -> Unit
+interface PostListener {
+    fun onLike(post: Post) //лайк
+    fun onShare(post: Post) //поделится
+    fun onRemove(post: Post) //удалить
+    fun onEdit(post: Post) //редактировать
+
+}
 
 class PostAdapter(
-    private val likeClickListener: likeClickListener,
-    private val shareClickListener: shareClickListener
+    private val listener: PostListener
 ) : ListAdapter<Post, PostViewHolder>(PostDiffItemCallback()) {
-//    var data: List<Post> = emptyList()
-//        set(value) {
-//            field = value
-//            notifyDataSetChanged()
-//        }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): PostViewHolder {
 
-        val binding = CardPostBinding.inflate(LayoutInflater.from(parent.context),
+        val binding = CardPostBinding.inflate(
+            LayoutInflater.from(parent.context),
             parent,
-            false)
-        return PostViewHolder(binding, likeClickListener, shareClickListener)
+            false
+        )
+        return PostViewHolder(binding, listener)
     }
 
     override fun onBindViewHolder(
         holder: PostViewHolder,
         position: Int
     ) {
-        holder.bind(getItem(position))    //data[position])
+        holder.bind(getItem(position))
     }
-
-//    override fun getItemCount(): Int = data.size
 }

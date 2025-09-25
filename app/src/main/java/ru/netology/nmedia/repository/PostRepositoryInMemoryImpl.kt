@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import ru.netology.nmedia.dto.Post
 
 class PostRepositoryInMemoryImpl : PostRepository {
-    private var defaultPosts = List(10_000) { counter ->
+    private var defaultPosts = List(10) { counter ->
         Post(
             id = counter + 1L,
             author = "Нетология. Университет интернет-профессий будущего",
@@ -17,10 +17,14 @@ class PostRepositoryInMemoryImpl : PostRepository {
         )
     }
 
+    //id для новых постов
+    private var nextId = defaultPosts.first().id + 1
+
     private val data = MutableLiveData(defaultPosts)
 
     override fun get(): LiveData<List<Post>> = data
 
+    //лайк
     override fun likeById(id: Long) {
         defaultPosts = defaultPosts.map { post ->
             if (post.id == id) {
@@ -37,6 +41,7 @@ class PostRepositoryInMemoryImpl : PostRepository {
         data.value = defaultPosts
     }
 
+    //поделится
     override fun shareById(id: Long) {
         defaultPosts = defaultPosts.map { post ->
             if (post.id == id) {
@@ -48,4 +53,25 @@ class PostRepositoryInMemoryImpl : PostRepository {
         data.value = defaultPosts
     }
 
+    //удаление
+    override fun removeById(id: Long) {
+        data.value =
+            data.value?.filter { it.id != id }  //.filterNot { it.id == id } как альтернатива
+
+    }
+
+    //создание новго поста, else - редактирование поста
+    override fun save(post: Post) {
+        if (post.id == 0L) {
+            data.value = listOf(post.copy(id = nextId++)) + data.value.orEmpty()
+        } else {
+            data.value = data.value?.map {
+                if (it.id == post.id) {
+                    post
+                } else {
+                    it
+                }
+            }
+        }
+    }
 }

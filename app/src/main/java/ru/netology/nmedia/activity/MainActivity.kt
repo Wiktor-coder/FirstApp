@@ -1,21 +1,23 @@
 package ru.netology.nmedia.activity
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import ru.netology.nmedia.viewmodel.PostViewModel
-import ru.netology.nmedia.R
 import ru.netology.nmedia.adapter.PostAdapter
+import ru.netology.nmedia.adapter.PostListener
 import ru.netology.nmedia.databinding.ActivityMainBinding
-import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.viewmodel.formatNumberCompact
+import ru.netology.nmedia.utils.AndroidUtils
 
 class MainActivity : AppCompatActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,44 +27,80 @@ class MainActivity : AppCompatActivity() {
 
         val viewModel by viewModels<PostViewModel>()
 
+        // Настройка RecyclerView
         val adapter = PostAdapter(
-            likeClickListener = {
-            viewModel.likeById(it.id)
-        },
-            shareClickListener = {
-            viewModel.shareById(it.id)
-        }
+            object : PostListener {
+                override fun onLike(post: Post) {
+                    viewModel.likeById(post.id)
+                }
+
+                override fun onShare(post: Post) {
+                    viewModel.shareById(post.id)
+                }
+
+                override fun onRemove(post: Post) {
+                    viewModel.removeById(post.id)
+                }
+
+                override fun onEdit(post: Post) {
+                    viewModel.edit(post)
+                }
+            }
         )
         binding.container.adapter = adapter
 
         viewModel.get().observe(this) { posts ->
-            adapter.submitList(posts) //ListAdapter
-            //adapter.data = posts
-//            binding.container.removeAllViews() //удаление элементов
-//
-//            posts.forEach { post ->
-//            with(CardPostBinding.inflate(layoutInflater, binding.container, true)) {
-//                content.text = post.content
-//                author.text = post.author
-//                published.text = post.published
-//                numberOfLikes.text = post.likeCount.formatNumberCompact()
-//                numberOfShare.text = post.shareCount.formatNumberCompact()
-//                Like.setImageResource(
-//                    if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
-//                        R.drawable.outline_favorite_24
-//                )
-//
-//                Like.setOnClickListener {
-//                    viewModel.likeById(post.id)
-//                    numberOfLikes.text = post.likeCount.formatNumberCompact() //viewModel.get().value?.likeCount?.formatNumberCompact()
-//                }
-//
-//                Share.setOnClickListener {
-//                    viewModel.shareById(post.id)
-//                    numberOfShare.text = post.shareCount.formatNumberCompact() //viewModel.get().value?.shareCount?.formatNumberCompact()
-//                }
-//            }
-//        }
+            adapter.submitList(posts)
+        }
+        // Подписка на список постов
+        viewModel.get().observe(this) { posts ->
+            adapter.submitList(posts)
+        }
+
+        // отмена редактирования должна быть здесь
+        viewModel.edited.observe(this) { edited ->
+            binding.content.setText(edited?.content ?: "")
+            if (edited != null) {
+                binding.content.requestFocus()
+                AndroidUtils.showKeyboard(binding.content)
+            }
+        }
+
+        //наблюдаем за состоянием редактирования
+        viewModel.isEditing.observe(this) { isEditing ->
+            binding.group.visibility = if (isEditing) View.VISIBLE else View.GONE
+        }
+
+        // Заполняем EditText при начале редактирования
+        viewModel.edited.observe(this) { post ->
+            binding.content.setText(post?.content ?: "")
+        }
+
+        binding.save.setOnClickListener {
+            //читаем ввод и обрезаем пробелы
+            val currentText =
+                binding.content.text?.trim().toString()
+
+            if (viewModel.isEditing.value == true) {
+                //Режим редактирования
+                viewModel.save(currentText)
+            } else {
+                // Режим создания нового поста
+                viewModel.createPost(currentText)
+            }
+
+            binding.content.setText("") //
+            binding.content.clearFocus()
+            //скрыть клавиатуру
+            AndroidUtils.hideKeyboard(binding.content)
+        }
+
+        //Кнопка "Отмена" (крестик)
+        binding.closed.setOnClickListener {
+            viewModel.cancelEdited()
+            binding.content.setText("")
+            binding.content.clearFocus()
+            AndroidUtils.hideKeyboard(binding.content)
         }
     }
 

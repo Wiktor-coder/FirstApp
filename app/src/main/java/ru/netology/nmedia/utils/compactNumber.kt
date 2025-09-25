@@ -1,4 +1,4 @@
-package ru.netology.nmedia.viewmodel
+package ru.netology.nmedia.utils
 
 fun Number.formatNumberCompact(): String {
     val value = this.toInt()
