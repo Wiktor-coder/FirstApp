@@ -21,6 +21,7 @@ class PostViewHolder(
             Like.text = post.likeCount.formatNumberCompact()
             Share.text = post.shareCount.formatNumberCompact()
 //            numberOfShare.text = post.shareCount.formatNumberCompact()
+
             //при использовании MaterialCheckBox
             Like.isChecked = post.likedByMe
 //            Like.setImageResource(
@@ -31,12 +32,10 @@ class PostViewHolder(
 
             Like.setOnClickListener {
                 listener.onLike(post)
-//                numberOfLikes.text = post.likeCount.formatNumberCompact()
             }
 
             Share.setOnClickListener {
                 listener.onShare(post)
-//                numberOfShare.text = post.shareCount.formatNumberCompact()
             }
 
             menu.setOnClickListener {
