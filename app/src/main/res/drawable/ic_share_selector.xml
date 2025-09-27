@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--селектор для кнопки Share в package layout в файле card_post-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/icons8_share" />
+</selector>

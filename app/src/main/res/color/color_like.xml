@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- цветовая гамма для нашего стиля кнопки лайк
+ для фыйла styles in package values-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:color="#F00" android:state_checked="true" />
+
+    <item android:color="?attr/colorControlNormal" />
+
+</selector>

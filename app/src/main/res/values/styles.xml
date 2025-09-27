@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><!-- ресерс стиля для кнопки лайк -->
+<resources>
+    <!--ссылаеммся на selector своей цветовой гаммой в файле color_like
+     in package color-->
+    <style name="Widget.App.LikeCheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/color_like</item>
+        <!--        <item name="buttonIconTint">@color/button_icon_tint</item>-->
+    </style>
+
+    <!--стиль для кнопки лайка в файле card_post package layout с цветовой политрой из файла color_like package color -->
+    <style name="Widget.App.LikeButton" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="iconTint">@color/color_like</item>
+        <!--        <item name="buttonIconTint">@color/button_icon_tint</item>-->
+    </style>
+
+<!--стиль для кнопки поделится в файле card_post package layout с цветовой политрой из файла color_like package color-->
+    <style name="ButtonShare" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="iconTint">@color/color_share</item>
+    </style>
+
+    <!--стиль для кнопки меню(три точки) в файле card_post package layout с цветовой политрой из файла color_like package color-->
+    <style name="ButtonMenu" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="iconTint">@color/color_menu</item>
+    </style>
+</resources>

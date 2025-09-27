@@ -18,27 +18,25 @@ class PostViewHolder(
             content.text = post.content
             author.text = post.author
             published.text = post.published
-            numberOfLikes.text = post.likeCount.formatNumberCompact()
-            numberOfShare.text = post.shareCount.formatNumberCompact()
+            Like.text = post.likeCount.formatNumberCompact()
+            Share.text = post.shareCount.formatNumberCompact()
+//            numberOfShare.text = post.shareCount.formatNumberCompact()
+            //при использовании MaterialCheckBox
+            Like.isChecked = post.likedByMe
+//            Like.setImageResource(
+//                if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
+//                    R.drawable.outline_favorite_24
+//            )
 
-            Like.setImageResource(
-                if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
-                    R.drawable.outline_favorite_24
-            )
-
-            numberOfLikes.isVisible = post.likeCount > 0 //не отображается если количество лайков ноль
-            numberOfShare.isVisible = post.shareCount > 0 //не отображается если количество поделится ноль
 
             Like.setOnClickListener {
                 listener.onLike(post)
-                numberOfLikes.text =
-                    post.likeCount.formatNumberCompact()
+//                numberOfLikes.text = post.likeCount.formatNumberCompact()
             }
 
             Share.setOnClickListener {
                 listener.onShare(post)
-                numberOfShare.text =
-                    post.shareCount.formatNumberCompact()
+//                numberOfShare.text = post.shareCount.formatNumberCompact()
             }
 
             menu.setOnClickListener {
