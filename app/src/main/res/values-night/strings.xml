@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="remove">remove</string>
+    <string name="post_content">Post content</string>
+    <string name="post_content_is_empty">Post content is empty</string>
+    <string name="edit">Edit</string>
+</resources>

@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+  <path
+      android:fillColor="#FF000000"
+      android:pathData="M7.219,5.781L5.781,7.219L14.563,16L5.781,24.781L7.219,26.219L16,17.438L24.781,26.219L26.219,24.781L17.438,16L26.219,7.219L24.781,5.781L16,14.563Z"/>
+</vector>
+<!-- <a target="_blank" href="https://icons8.com/icon/16248/close">Close</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>-->
