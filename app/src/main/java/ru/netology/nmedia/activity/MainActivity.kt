@@ -104,14 +104,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //системные отступы в приложении
     private fun applyInsets(root: View) {
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             v.setPadding(
                 v.paddingLeft,
-                v.paddingTop + systemBars.top,
+                if (isImeVisible) imeInsets.top else systemBars.top,
+                //v.paddingTop + systemBars.top,
                 v.paddingRight,
-                v.paddingBottom + systemBars.bottom
+                if (isImeVisible) imeInsets.bottom else systemBars.bottom
+                //v.paddingBottom + systemBars.bottom
             )
             insets
         }
