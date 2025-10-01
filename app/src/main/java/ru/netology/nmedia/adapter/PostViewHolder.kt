@@ -1,5 +1,8 @@
 package ru.netology.nmedia.adapter
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
@@ -7,6 +10,7 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.utils.formatNumberCompact
+import kotlin.time.Instant
 
 class PostViewHolder(
     private val binding: CardPostBinding,
@@ -57,6 +61,35 @@ class PostViewHolder(
                         }
                     }
                 }.show()
+            }
+            // обработка видео
+            if (!post.video.isNullOrBlank()) {
+                videoContainer.isVisible = true
+
+                videoContainer.setOnClickListener {
+                    val url = post.video.trim()
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        val pm = it.context.packageManager
+                        if (intent.resolveActivity(pm) != null) {
+                            it.context.startActivity(intent)
+                        } else {
+                            Toast.makeText(
+                                it.context,
+                                R.string.no_app_to_open_video,
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            it.context,
+                            R.string.invalid_video_url,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } else {
+                videoContainer.isVisible = false
             }
         }
     }

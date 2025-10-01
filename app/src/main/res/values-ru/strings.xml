@@ -13,4 +13,12 @@
     <string name="post_content">Содержание Поста</string>
     <string name="post_content_is_empty">Содержание Поста пустое!</string>
     <string name="edit">редактировать</string>
+    <string name="chooser_share_post">Поделиться</string>
+    <string name="error_empty_content">Содержимое не может быть пустым</string>
+    <string name="ok">ok</string>
+    <string name="post_save">post_save</string>
+    <string name="close_edit">close_edit</string>
+    <string name="play_video" >Запустить видео</string>
+    <string name="no_app_to_open_video">Не удалось запустить видео</string>
+    <string name="invalid_video_url">Некорректная ссылка на видео</string>
 </resources>

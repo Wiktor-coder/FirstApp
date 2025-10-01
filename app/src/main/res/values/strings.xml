@@ -12,4 +12,13 @@
     <string name="post_content">Post content</string>
     <string name="post_content_is_empty">Post content is empty!</string>
     <string name="edit">Edit</string>
+    <string name="chooser_share_post">Share</string>
+    <string name="error_empty_content">Content can\'t be empty</string>
+    <string name="ok">ok</string>
+    <string name="post_save">post_save</string>
+    <string name="close_edit">close_edit</string>
+    <string name="play_video">play video</string>
+    <string name="no_app_to_open_video">no app to open video</string>
+    <string name="invalid_video_url">invalid video url</string>
+    
 </resources>

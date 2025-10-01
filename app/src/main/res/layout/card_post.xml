@@ -135,9 +135,38 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="@dimen/common_space"
         android:text=""
+        tools:text="33"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/content"
         app:tint="?colorControlNormal" />
+
+    <FrameLayout
+        android:id="@+id/videoContainer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/Share"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <!-- Заглушка-изображение (можно использовать любой drawable, например, ic_video_placeholder) -->
+        <ImageView
+            android:id="@+id/videoThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_video_24" />
+
+        <!-- Кнопка Play (можно использовать векторный drawable, например, ic_play_circle) -->
+        <ImageView
+            android:id="@+id/videoPlayButton"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/play_video"
+            android:src="@drawable/ic_slow_video_24"
+            app:tint="@android:color/white" />
+    </FrameLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

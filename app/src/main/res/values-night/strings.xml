@@ -4,4 +4,7 @@
     <string name="post_content">Post content</string>
     <string name="post_content_is_empty">Post content is empty</string>
     <string name="edit">Edit</string>
+    <string name="post_save">post_save</string>
+    <string name="close_edit">close_edit</string>
+    <string name="play_video" />
 </resources>

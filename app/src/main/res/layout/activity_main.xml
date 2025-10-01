@@ -10,60 +10,70 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/container"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:context=".activity.MainActivity"
         tools:listitem="@layout/card_post" />
+<!--    app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
 
-    <EditText
-        android:id="@+id/content"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:hint="@string/post_content"
-        android:importantForAutofill="no"
-        android:inputType="textMultiLine"
-        android:padding="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/save"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ImageView
-        android:id="@+id/save"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/outline_check_circle_24" />
+        android:layout_margin="@dimen/common_space"
+        android:contentDescription="@string/post_save"
+        app:srcCompat="@drawable/ic_add_24" />
 
-    <ImageView
-        android:id="@+id/closed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/ic_icons8_close" />
+<!--    <EditText-->
+<!--        android:id="@+id/content"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:background="@android:color/transparent"-->
+<!--        android:hint="@string/post_content"-->
+<!--        android:importantForAutofill="no"-->
+<!--        android:inputType="textMultiLine"-->
+<!--        android:padding="10dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toStartOf="@id/save"-->
+<!--        app:layout_constraintStart_toStartOf="parent" />-->
 
-    <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/bottomBarrier"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:barrierDirection="top"
-        app:constraint_referenced_ids="content, save, closed" />
+<!--    <ImageView-->
+<!--        android:id="@+id/save"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:padding="10dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:srcCompat="@drawable/outline_check_circle_24" />-->
 
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/group"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:constraint_referenced_ids="closed" />
+<!--    <ImageView-->
+<!--        android:id="@+id/closed"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:padding="10dp"-->
+<!--        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:srcCompat="@drawable/ic_icons8_close" />-->
+
+<!--    <androidx.constraintlayout.widget.Barrier-->
+<!--        android:id="@+id/bottomBarrier"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:barrierDirection="top"-->
+<!--        app:constraint_referenced_ids="content, save, closed" />-->
+
+<!--    <androidx.constraintlayout.widget.Group-->
+<!--        android:id="@+id/group"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:visibility="gone"-->
+<!--        app:constraint_referenced_ids="closed" />-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
