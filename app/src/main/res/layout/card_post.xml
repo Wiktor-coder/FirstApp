@@ -155,7 +155,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_video_24" />
+            android:src="@drawable/ic_1" />
 
         <!-- Кнопка Play (можно использовать векторный drawable, например, ic_play_circle) -->
         <ImageView
