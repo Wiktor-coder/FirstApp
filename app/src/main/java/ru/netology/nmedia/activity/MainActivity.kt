@@ -17,7 +17,6 @@ import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostListener
 import ru.netology.nmedia.databinding.ActivityMainBinding
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.utils.AndroidUtils
 
 class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -83,13 +82,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         // !!нужно сделать!!
-        viewModel.edited.observe(this) { edited ->
+       // viewModel.edited.observe(this) { edited ->
 //            binding.content.setText(edited?.content ?: "")
 //            if (edited != null) {
 //                binding.content.requestFocus()
 //                AndroidUtils.showKeyboard(binding.content)
 //            }
-        }
+       // }
 
         //наблюдаем за состоянием редактирования
 //        viewModel.isEditing.observe(this) { isEditing ->
