@@ -70,4 +70,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             repository.save(newPost)
         }
     }
+    //проверка наличия видео
+    fun hasVideo(post: Post): Boolean = !post.video.isNullOrBlank()
+    //возвращаем URL или null
+    fun getVideoUrl(post: Post): String? = post.video?.trim()
+
+
 }

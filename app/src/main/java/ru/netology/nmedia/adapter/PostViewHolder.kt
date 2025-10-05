@@ -2,6 +2,7 @@ package ru.netology.nmedia.adapter
 
 import android.content.Intent
 import android.net.Uri
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
@@ -10,7 +11,6 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.utils.formatNumberCompact
-import kotlin.time.Instant
 
 class PostViewHolder(
     private val binding: CardPostBinding,
@@ -24,14 +24,9 @@ class PostViewHolder(
             published.text = post.published
             Like.text = post.likeCount.formatNumberCompact()
             Share.text = post.shareCount.formatNumberCompact()
-//            numberOfShare.text = post.shareCount.formatNumberCompact()
 
             //при использовании MaterialCheckBox
             Like.isChecked = post.likedByMe
-//            Like.setImageResource(
-//                if (post.likedByMe) R.drawable.ic_baseline_favorite_24 else
-//                    R.drawable.outline_favorite_24
-//            )
 
 
             Like.setOnClickListener {
@@ -43,54 +38,61 @@ class PostViewHolder(
             }
 
             menu.setOnClickListener {
-                PopupMenu(it.context,it).apply {
-                    inflate(R.menu.post_menu)
-
-                    setOnMenuItemClickListener { item ->
-                        when(item.itemId) {
-                            R.id.remove -> {
-//                                removeClickListener(post)
-                                listener.onRemove(post)
-                                true
-                            }
-                            R.id.edit -> {
-                                listener.onEdit(post)
-                                true
-                            }
-                            else -> false
-                        }
-                    }
-                }.show()
+                showPopupMenu(it, post)
             }
-            // обработка видео
-            if (!post.video.isNullOrBlank()) {
-                videoContainer.isVisible = true
 
+            // обработка видео
+            val hasVideo = listener.hasVideo(post)
+            videoContainer.isVisible = hasVideo
+
+            if (hasVideo) {
                 videoContainer.setOnClickListener {
-                    val url = post.video.trim()
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        val pm = it.context.packageManager
-                        if (intent.resolveActivity(pm) != null) {
-                            it.context.startActivity(intent)
-                        } else {
+                    val url = listener.getVideoUrl(post)
+                    if (url != null) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            val pm = it.context.packageManager
+                            if (intent.resolveActivity(pm) != null) {
+                                it.context.startActivity(intent)
+                            } else {
+                                Toast.makeText(
+                                    it.context,
+                                    R.string.no_app_to_open_video,
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        } catch (e: Exception) {
                             Toast.makeText(
                                 it.context,
-                                R.string.no_app_to_open_video,
-                                Toast.LENGTH_LONG,
+                                R.string.invalid_video_url,
+                                Toast.LENGTH_LONG
                             ).show()
                         }
-                    } catch (e: Exception) {
-                        Toast.makeText(
-                            it.context,
-                            R.string.invalid_video_url,
-                            Toast.LENGTH_LONG
-                        ).show()
                     }
                 }
-            } else {
-                videoContainer.isVisible = false
             }
         }
+    }
+
+    private fun showPopupMenu(view: View, post: Post) {
+        PopupMenu(view.context, view).apply {
+            inflate(R.menu.post_menu)
+
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.remove -> {
+                        listener.onRemove(post)
+                        true
+                    }
+
+                    R.id.edit -> {
+                        listener.onEdit(post)
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+        }.show()
     }
 }

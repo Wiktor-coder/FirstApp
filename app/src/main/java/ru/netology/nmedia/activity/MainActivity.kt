@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
                     viewModel.likeById(post.id)
                 }
 
-                //подробнее об реализации? возможно ли переместить реализацию в PostRepositoryInMemoryImpl из activity?
+                //поделится
                 override fun onShare(post: Post) {
                     viewModel.shareById(post.id)
                     val intent = Intent().apply {
@@ -72,6 +72,14 @@ class MainActivity : AppCompatActivity() {
                     viewModel.edit(post)
                     editPostLauncher.launch(post.content)
                 }
+
+                override fun hasVideo(post: Post): Boolean {
+                    return viewModel.hasVideo(post)
+                }
+
+                override fun getVideoUrl(post: Post): String? {
+                    return viewModel.getVideoUrl(post)
+                }
             }
         )
         binding.container.adapter = adapter
@@ -81,54 +89,9 @@ class MainActivity : AppCompatActivity() {
             adapter.submitList(posts)
         }
 
-        // !!нужно сделать!!
-       // viewModel.edited.observe(this) { edited ->
-//            binding.content.setText(edited?.content ?: "")
-//            if (edited != null) {
-//                binding.content.requestFocus()
-//                AndroidUtils.showKeyboard(binding.content)
-//            }
-       // }
-
-        //наблюдаем за состоянием редактирования
-//        viewModel.isEditing.observe(this) { isEditing ->
-//            binding.group.visibility = if (isEditing) View.VISIBLE else View.GONE
-//        }
-
-        // Заполняем EditText при начале редактирования
-//        viewModel.edited.observe(this) { post ->
-//            binding.content.setText(post?.content ?: "")
-//        }
-
         binding.add.setOnClickListener {
-            //import androidx.activity.result.launch чтобы не передовать Unit в метод
             newPostLauncher.launch()
-
-            //читаем ввод и обрезаем пробелы
-//            val currentText =
-//                binding.content.text?.trim().toString()
-//
-//            if (viewModel.isEditing.value == true) {
-//                //Режим редактирования
-//                viewModel.save(currentText)
-//            } else {
-//                // Режим создания нового поста
-//                viewModel.createPost(currentText)
-//            }
-//
-//            binding.content.setText("") //
-//            binding.content.clearFocus()
-//            //скрыть клавиатуру
-//            AndroidUtils.hideKeyboard(binding.content)
         }
-
-        //Кнопка "Отмена" (крестик)
-//        binding.closed.setOnClickListener {
-//            viewModel.cancelEdited()
-//            binding.content.setText("")
-//            binding.content.clearFocus()
-//            AndroidUtils.hideKeyboard(binding.content)
-//        }
     }
 
     //системные отступы в приложении
@@ -140,10 +103,8 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(
                 v.paddingLeft,
                 if (isImeVisible) imeInsets.top else systemBars.top,
-                //v.paddingTop + systemBars.top,
                 v.paddingRight,
                 if (isImeVisible) imeInsets.bottom else systemBars.bottom
-                //v.paddingBottom + systemBars.bottom
             )
             insets
         }
