@@ -1,7 +1,6 @@
 package ru.netology.nmedia.repository
 
 import android.content.Context
-import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
@@ -9,9 +8,9 @@ import com.google.gson.reflect.TypeToken
 import ru.netology.nmedia.dto.Post
 import java.lang.reflect.Type
 
-class PostRepositorySharedPreferences(context: Context) : PostRepository {
+class PostRepositoryFiles(private val context: Context) : PostRepository {
 
-    private val preferences = context.getSharedPreferences("posts", Context.MODE_PRIVATE)
+    //private val preferences = context.getSharedPreferences("posts", Context.MODE_PRIVATE)
 
 
     //сохранять всё в deaultPost через data.value сохранение не работает, только обновляем
@@ -21,7 +20,7 @@ class PostRepositorySharedPreferences(context: Context) : PostRepository {
             sync()
         }
     //находим максимальный id постов и увеличиваем его
-    private var nextId = defaultPosts.maxByOrNull { it.id }?.id?.plus(1) ?: 1L
+    private var nextId = defaultPosts.maxByOrNull { it.id }?.id?.plus(1) ?: 0L
     private val data = MutableLiveData(defaultPosts)
 
     override fun get(): LiveData<List<Post>> = data
@@ -82,23 +81,29 @@ class PostRepositorySharedPreferences(context: Context) : PostRepository {
     }
 
     //чтение преобразование из строчки в список обьектов
+    //filesDir локальный файл не относится к кэш
     private fun readPosts(): List<Post> {
-        val serialized = preferences.getString(POST_KEY, null)
-        return if (serialized != null) {
-            gson.fromJson(serialized, postsType)
+        val file = context.filesDir.resolve(POST_FILE)
+        return if (file.exists()) {
+            //file.reader().buffered
+            context.openFileInput(POST_FILE).bufferedReader().use {
+                gson.fromJson(it, postsType)
+            }
         } else {
             emptyList()
         }
     }
 
     //записываем наши посты в gson
+    //MODE_PRIVATE для перезаписывания если был до этого
+    //it.write записываем в наш поток
     private fun sync() {
-        preferences.edit {
-            putString(POST_KEY, gson.toJson(defaultPosts))
+        context.openFileOutput(POST_FILE, Context.MODE_PRIVATE).bufferedWriter().use {
+           it.write(gson.toJson(defaultPosts))
         }
     }
     companion object {
-        const val POST_KEY = "POST_KEY"
+        const val POST_FILE = "posts.json"
         val gson = Gson()
         val postsType: Type = TypeToken.getParameterized(List::class.java, Post::class.java).type
     }
