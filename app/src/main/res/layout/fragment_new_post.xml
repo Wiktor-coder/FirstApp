@@ -5,8 +5,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.NewPostActivity">
-
+    tools:context=".fragment.NewPostFragment">
+<!--поле ввода для текста-->
     <EditText
         android:id="@+id/edit"
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
         android:background="@android:color/transparent"
         android:gravity="start|top"
         android:inputType="textMultiLine" />
-
+<!--нижняя полоска для красоты-->
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
         style="@style/Widget.MaterialComponents.BottomAppBar.Colored"
@@ -26,20 +26,11 @@
         android:id="@+id/ok"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
         android:contentDescription="@string/post_save"
         app:layout_anchor="@id/bottomAppBar"
-        app:layout_anchorGravity="end|center_vertical"
         app:srcCompat="@drawable/outline_check_24" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/cancel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:contentDescription="@string/close_edit"
-        app:layout_anchor="@id/bottomAppBar"
-        app:layout_anchorGravity="start|center_vertical"
-        app:srcCompat="@drawable/ic_icons8_close" />
+
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

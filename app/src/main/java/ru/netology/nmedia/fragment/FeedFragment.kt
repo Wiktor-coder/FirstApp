@@ -1,49 +1,35 @@
-package ru.netology.nmedia.activity
+package ru.netology.nmedia.fragment
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.launch
-import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatActivity
+import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import ru.netology.nmedia.R
 import ru.netology.nmedia.viewmodel.PostViewModel
 import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostListener
-import ru.netology.nmedia.databinding.ActivityMainBinding
+import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
 
-class MainActivity : AppCompatActivity() {
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        val binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        applyInsets(binding.root)
 
-        val viewModel by viewModels<PostViewModel>()
+class FeedFragment : Fragment() {
 
-        //регистрируем контракт на создание нового поста, передаём наш контракт
-        val newPostLauncher = registerForActivityResult(NewPostContract) { result ->
-            //обработчик, проверяем на null если true выходим
-            result ?: return@registerForActivityResult
-            // иначе вызываем метод сохранить, пердаём result
-            viewModel.createPost(result)
-        }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val binding = FragmentFeedBinding.inflate(layoutInflater, container, false)
 
-        //регистрируем контракт на редактирование поста
-        val editPostLauncher = registerForActivityResult(EditPostContract()) { newText ->
-            newText ?: return@registerForActivityResult
-            viewModel.edited.value?.let { post ->
-                viewModel.save( newText)
-            }
-        }
+        //val viewModel by viewModels<PostViewModel>(::requireParentFragment)
+        val viewModel by activityViewModels<PostViewModel>()
 
         // Настройка RecyclerView
         val adapter = PostAdapter(
@@ -60,7 +46,8 @@ class MainActivity : AppCompatActivity() {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, post.content)
                     }
-                    val chooser = Intent.createChooser(intent, getString(R.string.chooser_share_post))
+                    val chooser =
+                        Intent.createChooser(intent, getString(R.string.chooser_share_post))
                     startActivity(chooser)
                 }
 
@@ -69,8 +56,15 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onEdit(post: Post) {
-                    viewModel.edit(post)
-                    editPostLauncher.launch(post.content)
+                    val bundle = bundleOf("postId" to post.id)
+                    findNavController().navigate(R.id.editPostFragment, bundle)
+//                    viewModel.edit(post)
+//                    editPostLauncher.launch(post.content)
+                }
+
+                override fun onPostClick(post: Post) {
+                    val bundle = bundleOf("postId" to post.id)
+                    findNavController().navigate(R.id.singlePostFragment, bundle)
                 }
 
                 override fun hasVideo(post: Post): Boolean {
@@ -85,13 +79,16 @@ class MainActivity : AppCompatActivity() {
         binding.container.adapter = adapter
 
         // Подписка на список постов
-        viewModel.get().observe(this) { posts ->
+        viewModel.get().observe(viewLifecycleOwner) { posts ->
             adapter.submitList(posts)
         }
 
         binding.add.setOnClickListener {
-            newPostLauncher.launch()
+            findNavController().navigate(R.id.action_feedFragment_to_newPostFragment2)
         }
+
+        applyInsets(binding.root)
+        return binding.root
     }
 
     //системные отступы в приложении

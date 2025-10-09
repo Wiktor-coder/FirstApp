@@ -41,6 +41,10 @@ class PostViewHolder(
                 showPopupMenu(it, post)
             }
 
+            root.setOnClickListener {
+                listener.onPostClick(post)
+            }
+
             // обработка видео
             val hasVideo = listener.hasVideo(post)
             videoContainer.isVisible = hasVideo

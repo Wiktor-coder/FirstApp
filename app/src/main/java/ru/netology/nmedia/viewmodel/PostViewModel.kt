@@ -40,7 +40,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         _edited.value = post
     }
 
-    //Сохранение изменений
+    //Сохранение изменений для редактирования
     fun save(newContent: String) {
         edited.value?.let { post ->
             if (post.content != newContent) {
@@ -50,18 +50,22 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         //Завершаем редактирование
         cancelEdited()
     }
+
     //Отмена редактирования
     fun cancelEdited() {
         _edited.value = null
     }
 
+    //новый пост
     @RequiresApi(Build.VERSION_CODES.O)
     fun createPost(content: String) {
         if (content.isNotBlank()) {
             val newPost = Post(
                 id = 0L,
                 author = "My Post",
-                published = "${LocalDate.now()} ${LocalTime.now(ZoneId.of("Europe/Moscow")).truncatedTo(ChronoUnit.SECONDS)}",
+                published = "${LocalDate.now()} ${
+                    LocalTime.now(ZoneId.of("Europe/Moscow")).truncatedTo(ChronoUnit.SECONDS)
+                }",
                 content = content.trim(),
                 likeCount = 0,
                 shareCount = 0,
@@ -70,8 +74,10 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             repository.save(newPost)
         }
     }
+
     //проверка наличия видео
     fun hasVideo(post: Post): Boolean = !post.video.isNullOrBlank()
+
     //возвращаем URL или null
     fun getVideoUrl(post: Post): String? = post.video?.trim()
 

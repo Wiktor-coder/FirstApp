@@ -12,6 +12,7 @@ interface PostListener {
     fun onRemove(post: Post) //удалить
     fun onEdit(post: Post) //редактировать
 
+    fun onPostClick(post: Post)
     fun hasVideo(post: Post): Boolean
     fun getVideoUrl(post: Post): String?
 

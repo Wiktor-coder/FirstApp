@@ -11,24 +11,20 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FirstApp">
-        <activity
-            android:name=".activity.EditPostActivity"
-            android:exported="false" />
-        <!-- .NewPostActivity используется внутри приложения поэтому exported="false" -->
-        <activity
-            android:name=".activity.NewPostActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activity.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+<!--        <activity-->
+<!--            android:name=".fragment.EditPostFragment"-->
+<!--            android:exported="false" />-->
+<!--        &lt;!&ndash; .NewPostActivity используется внутри приложения поэтому exported="false" &ndash;&gt;-->
+<!--        <activity-->
+<!--            android:name=".fragment.NewPostFragment"-->
+<!--            android:exported="false" />-->
+<!--        <activity-->
+<!--            android:name=".fragment.FeedFragment"-->
+<!--            android:exported="true">-->
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity> <!-- прописываем intents в соответствии с входными данными -->
+<!--        </activity> &lt;!&ndash; прописываем intents в соответствии с входными данными &ndash;&gt;-->
         <activity
-            android:name=".activity.IntentHandlerActivity"
+            android:name=".activity.AppActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -36,6 +32,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>

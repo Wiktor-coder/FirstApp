@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="@dimen/common_space"
     android:padding="@dimen/common_space"
-    tools:context=".activity.MainActivity">
+    tools:context=".fragment.FeedFragment">
 
 
     <ImageView
@@ -75,7 +75,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/common_space"
-        android:autoLink="all"
         android:text="@string/content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
