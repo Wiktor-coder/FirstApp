@@ -76,6 +76,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/common_space"
         android:text="@string/content"
+        android:maxLines="15"
+        android:ellipsize="end"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
