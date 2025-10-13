@@ -1,22 +1,22 @@
 package ru.netology.nmedia.fragment
 
-import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import ru.netology.nmedia.databinding.FragmentNewPostBinding
+import ru.netology.nmedia.utils.DraftRepository
 import ru.netology.nmedia.utils.StringArg
 import ru.netology.nmedia.viewmodel.PostViewModel
-import kotlin.getValue
 
 
-class NewPostFragment : androidx.fragment.app.Fragment() {
+class NewPostFragment : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
@@ -28,31 +28,57 @@ class NewPostFragment : androidx.fragment.app.Fragment() {
         val viewModel by activityViewModels<PostViewModel>()
         //val viewModel by viewModels<PostViewModel>(::requireParentFragment)
 
-        arguments?.textArg.let(binding.edit::setText)
+        arguments?.textArg.let(binding.edit::setText) // ?
 
+        val context = requireContext()
 
-//        обработчик нажатия на кнопку добавления
-        binding.ok.setOnClickListener {
-            val text = binding.edit.text.toString()
-            if (text.isBlank()) {
-                activity?.setResult(Activity.RESULT_CANCELED)
-            } else {
-                //val intent = Intent().apply { putExtra(Intent.EXTRA_TEXT, text) }
-                //activity?.setResult(Activity.RESULT_OK, intent)
-                viewModel.createPost(binding.edit.text.toString())
+        // 1. Загружаем черновик (если есть)
+        //Пользователь открывает "Новый пост" -> видит черновик (если был)
+        DraftRepository.loadDraft(context)?.let { draft ->
+            if (draft.isNotBlank()) {
+                binding.edit.setText(draft)
+                binding.edit.setSelection(draft.length)
             }
-            //закрытие активити
-//            activity?.finish()
+        }
+
+        // 2. Если передан текст через share (например, извне), он имеет приоритет над черновиком
+        // Пользователь нажимает «Назад» -> текст сохраняется как черновик.
+        arguments?.textArg?.let { sharedText ->
+            if (sharedText.isNotBlank()) {
+                binding.edit.setText(sharedText)
+                binding.edit.setSelection(sharedText.length)
+                // Очищаем черновик, так как пользователь явно поделился текстом
+                DraftRepository.clearDraft(context)
+            }
+        }
+
+        // 3. обработчик нажатия на кнопку добавления
+        // Пользователь нажимает «ОК» -> пост создаётся, черновик удаляется.
+        binding.ok.setOnClickListener {
+            val text = binding.edit.text.toString().trim()
+            if (text.isNotEmpty()) {
+                viewModel.createPost(text)
+                // Успешно сохранили — очищаем черновик
+                DraftRepository.clearDraft(context)
+            }
             findNavController().navigateUp()
 
-
-            //Альтернатива без вызова ошибки
-//            if (!binding.edit.text.isNullOrBlank()) {
-//                val text = binding.edit.text.toString()
-//                viewModel.createPost(text)
-//                findNavController().navigateUp()
-//            }
         }
+
+        // 4. Перехватываем системную кнопку "Назад"
+        // Пользователь делится текстом извне (через share)
+        // -> черновик игнорируется, текст подставляется, черновик очищается.
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val currentText = binding.edit.text.toString().trim()
+                if (currentText.isNotEmpty()) {
+                    DraftRepository.saveDraft(requireContext(), currentText)
+                }
+                findNavController().navigateUp()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+
         return binding.root
     }
 
