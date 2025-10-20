@@ -49,11 +49,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         message.data[action]?.let { actionStr ->
             val action = Action.entries.find { it.name == actionStr }
+            val json = message.data[content] ?: return
             when (action) {
                 Action.LIKE -> {
-                    val json = message.data[content] ?: return
-                    val likeObj = gson.fromJson(json, Like::class.java)
-                    handleLike(likeObj)
+                    val like = gson.fromJson(json, Like::class.java)
+                    val title = getString(
+                        R.string.notification_user_liked,
+                        like.userName,
+                        like.postAuthor)
+                    showNotification(title)
+
+//                    val json = message.data[content] ?: return
+//                    val likeObj = gson.fromJson(json, Like::class.java)
+//                    handleLike(likeObj)
                 }
 //                    handleLike(
 //                    gson.fromJson(
@@ -63,22 +71,50 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 //                )
 
                 Action.SHARE -> {
-                    val json = message.data[content] ?: return
-                    val sharePost = gson.fromJson(json, Share::class.java)
-                    handleShare(sharePost)
+                    val share = gson.fromJson(json, Share::class.java)
+                    val title = getString(
+                        R.string.notification_user_shared,
+                        share.userName
+                    )
+                    showNotification(title)
+
+//                    val json = message.data[content] ?: return
+//                    val sharePost = gson.fromJson(json, Share::class.java)
+//                    handleShare(sharePost)
                 }
 
                 Action.NEW_POST -> {
-                    val json = message.data[content] ?: return
-                    val newPost = gson.fromJson(json, NewPost::class.java)
-                    handleNewPost(newPost)
-                }
+                    val post = gson.fromJson(json, NewPost::class.java)
+                    val title = "${post.authorName} опубликовал новый пост:"
+                    val trimmedContent = if (post.content.length > MAX_NOTIFICATION_CONTENT_LENGTH) {
+                        post.content.take(MAX_NOTIFICATION_CONTENT_LENGTH) + "…"
+                    } else {
+                        post.content
+                    }
+                    showNotification(title, trimmedContent)
 
+//                    val json = message.data[content] ?: return
+//                    val newPost = gson.fromJson(json, NewPost::class.java)
+//                    handleNewPost(newPost)
+                }
                 null -> {
                     Log.w("FCM", "Unknown action: $actionStr")
                 }
             }
         }
+    }
+
+    private fun showNotification(title: String, text: String? = null) {
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(title)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        if (!text.isNullOrBlank()) {
+            builder
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+        }
+        notify(builder.build())
     }
 
     private fun handleLike(content: Like) {
