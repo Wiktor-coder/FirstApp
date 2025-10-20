@@ -21,4 +21,8 @@
     <string name="play_video" >Запустить видео</string>
     <string name="no_app_to_open_video">Не удалось запустить видео</string>
     <string name="invalid_video_url">Некорректная ссылка на видео</string>
+    <string name="notification_user_liked">%1$s поставил лайк посту %2$s</string>
+    <string name="channel_remote_name">Уведомление с сервера</string>
+    <string name="channel_remote_description">Уведомление с удалённго сервера</string>
+    <string name="notification_user_shared">%1$s поделился постом</string>
 </resources>

@@ -20,5 +20,9 @@
     <string name="play_video">play video</string>
     <string name="no_app_to_open_video">no app to open video</string>
     <string name="invalid_video_url">invalid video url</string>
-    
+    <string name="notification_user_liked">User %1$s liked %2$s\'s post</string>
+    <string name="channel_remote_name">Server notifiications</string>
+    <string name="channel_remote_description">Notifications from remote server</string>
+    <string name="notification_user_shared">%1$s shared a post</string>
+
 </resources>
