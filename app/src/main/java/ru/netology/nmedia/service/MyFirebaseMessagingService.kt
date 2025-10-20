@@ -62,6 +62,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 //                    )
 //                )
 
+
                 Action.SHARE -> {
                     val json = message.data[content] ?: return
                     val sharePost = gson.fromJson(json, Share::class.java)
