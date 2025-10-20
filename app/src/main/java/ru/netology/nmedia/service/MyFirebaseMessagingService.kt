@@ -171,25 +171,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun notify(notification: Notification) {
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.w("FCM", "Notification permission denied")
-            return
+        // Проверяем разрешение ТОЛЬКО на Android 13 (API 33) и выше
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w("FCM", "Notification permission denied")
+                return
+            }
         }
-        NotificationManagerCompat.from(this)
-            .notify(Random.nextInt(100_000), notification)
+        // На Android < 13 — просто показываем уведомление
+        NotificationManagerCompat.from(this).notify(Random.nextInt(100_000), notification)
     }
 
-//    private fun notify(notification: Notification) {
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-//            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-//            PackageManager.PERMISSION_DENIED
-//        )
-//            NotificationManagerCompat.from(this).notify(
-//                Random.nextInt(100_000), notification
-//            )
-//    }
 }
 
 enum class Action {
