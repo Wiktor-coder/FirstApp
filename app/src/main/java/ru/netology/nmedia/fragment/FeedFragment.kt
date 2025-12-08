@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -21,15 +22,18 @@ import ru.netology.nmedia.dto.Post
 
 class FeedFragment : Fragment() {
 
+    private val viewModel: PostViewModel by activityViewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val binding = FragmentFeedBinding.inflate(layoutInflater, container, false)
+        val binding = FragmentFeedBinding.inflate(inflater, container, false)
 
         //val viewModel by viewModels<PostViewModel>(::requireParentFragment)
-        val viewModel by activityViewModels<PostViewModel>()
+        //val viewModel by activityViewModels<PostViewModel>()
+
 
         // Настройка RecyclerView
         val adapter = PostAdapter(
@@ -78,10 +82,20 @@ class FeedFragment : Fragment() {
         )
         binding.container.adapter = adapter
 
-        // Подписка на список постов
-        viewModel.get().observe(viewLifecycleOwner) { posts ->
-            adapter.submitList(posts)
+        viewModel.data.observe(viewLifecycleOwner) { state ->
+            adapter.submitList(state.posts)
+            binding.progress.isVisible = state.loading
+            binding.errorGroup.isVisible = state.error
+            binding.emptyText.isVisible = state.empty
         }
+
+        binding.retryButton.setOnClickListener {
+            viewModel.loadPost()
+        }
+        // Подписка на список постов
+//        viewModel.get().observe(viewLifecycleOwner) { posts ->
+//            adapter.submitList(posts)
+//        }
 
         binding.add.setOnClickListener {
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment2)

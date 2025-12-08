@@ -9,7 +9,7 @@ import ru.netology.nmedia.entity.PostEntity
 @Dao
 interface PostDao {
     @Query("SELECT * FROM PostEntity ORDER BY id DESC")
-    fun getAll(): LiveData<List<PostEntity>> //сразу возвращаем LiveData, подписку на изменения таблицы
+    fun getAll():List<PostEntity> //сразу возвращаем LiveData, подписку на изменения таблицы
 
     @Upsert //
     fun save(post: PostEntity): Long

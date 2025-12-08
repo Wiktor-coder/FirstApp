@@ -1,14 +1,48 @@
 package ru.netology.nmedia.repository
 
 import android.content.Context
+import java.util.concurrent.TimeUnit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import okio.IOException
+import okio.Timeout
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.entity.PostEntity
 
-class PostRepositorySQLiteImpl(private val dao: PostDao) : PostRepository {
+class PostRepositorySQLiteImpl: PostRepository {
+    // для получения списка
+    private val typeToken = object : TypeToken<List<Post>>() {}
+    companion object{
+        const val BASE_URL = "http://10.0.2.2:9999"
+
+        val jsonType = "application/json".toMediaType()
+    }
+
+    private val gson = Gson()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    override fun get(): List<Post> {
+        // создаём запрос
+        val request = Request.Builder()
+            .url("${ BASE_URL}/api/slow/posts")
+            .build()
+
+        val call = client.newCall(request)
+        val response = call.execute()
+        val stringBody = response.body.string()
+        return gson.fromJson(stringBody,typeToken.type)
+    }
 
 //    private val posts = MutableLiveData<List<Post>>()
 //
@@ -16,29 +50,62 @@ class PostRepositorySQLiteImpl(private val dao: PostDao) : PostRepository {
 //        refresh()
 //    }
 
-    override fun get(): LiveData<List<Post>> = dao.getAll().map { posts ->
-        posts.map { postEntity ->
-                postEntity.toPost()
-        }
-    }
+//    override fun get(): List<Post> = dao.getAll().map { posts ->
+//        posts.map { postEntity ->
+//                postEntity.toPost()
+//        }
+//    }
 
     override fun likeById(id: Long) {
-        dao.likeById(id)
+        val request = Request.Builder()
+            .url("${BASE_URL}/api/slow/posts/$id/likes")
+            .post(RequestBody.EMPTY)
+            .build()
+
+        val call = client.newCall(request)
+        val response = call.execute()
+
+        if (!response.isSuccessful) {
+            throw IOException("Unexpected code $response")
+        }
+
+        response.close()
+
+        //dao.likeById(id)
 //        refresh()
     }
 
     override fun shareById(id: Long) {
-        dao.shareById(id)
+       // dao.shareById(id)
 //        refresh()
     }
 
     override fun removeById(id: Long) {
-        dao.removeById(id)
+        // создаём запрос
+        val request = Request.Builder()
+            .url("${ BASE_URL}/api/slow/posts/$id")
+            .delete()
+            .build()
+
+        client.newCall(request)
+
+        //dao.removeById(id)
 //        refresh()
     }
 
-    override fun save(post: Post) {
-        dao.save(PostEntity.fromPost(post))
+    override fun save(post: Post): Post {
+        // создаём запрос
+        val request = Request.Builder()
+            .url("${ BASE_URL}/api/slow/posts")
+            .post(gson.toJson(post).toRequestBody(jsonType))
+            .build()
+
+        val call = client.newCall(request)
+        val response = call.execute()
+        val stringBody = response.body.string()
+        return gson.fromJson(stringBody, Post::class.java)
+
+        //dao.save(PostEntity.fromPost(post))
 //        refresh()
     }
 
@@ -47,12 +114,12 @@ class PostRepositorySQLiteImpl(private val dao: PostDao) : PostRepository {
 //        posts.postValue(post)
 //    }
 
-    companion object {
-        fun newInstance(context: Context): PostRepositorySQLiteImpl {
-            val db = AppDb.getInstance(context)
-            return PostRepositorySQLiteImpl(db.postDao)
-        }
-    }
+//    companion object {
+//        fun newInstance(context: Context): PostRepositorySQLiteImpl {
+//            val db = AppDb.getInstance(context)
+//            return PostRepositorySQLiteImpl(db.postDao)
+//        }
+//    }
 
 //    //private val preferences = context.getSharedPreferences("posts", Context.MODE_PRIVATE)
 //

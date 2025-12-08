@@ -21,7 +21,7 @@ class PostViewHolder(
         with(binding) {
             content.text = post.content
             author.text = post.author
-            published.text = post.published
+            published.text = post.published.toString()
             Like.text = post.likeCount.formatNumberCompact()
             Share.text = post.shareCount.formatNumberCompact()
 

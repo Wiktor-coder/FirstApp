@@ -11,7 +11,7 @@ class PostEntity (
     @PrimaryKey(autoGenerate = true)
     val id: Long,
     val author: String,
-    val published: String,
+    val published: Long,
     val content: String,
     val likeCount: Int,
     val shareCount: Int,

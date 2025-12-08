@@ -14,6 +14,7 @@ import ru.netology.nmedia.databinding.FragmentNewPostBinding
 import ru.netology.nmedia.utils.DraftRepository
 import ru.netology.nmedia.utils.StringArg
 import ru.netology.nmedia.viewmodel.PostViewModel
+import kotlin.concurrent.thread
 
 
 class NewPostFragment : Fragment() {
@@ -55,14 +56,15 @@ class NewPostFragment : Fragment() {
         // 3. обработчик нажатия на кнопку добавления
         // Пользователь нажимает «ОК» -> пост создаётся, черновик удаляется.
         binding.ok.setOnClickListener {
-            val text = binding.edit.text.toString().trim()
-            if (text.isNotEmpty()) {
-                viewModel.createPost(text)
-                // Успешно сохранили — очищаем черновик
-                DraftRepository.clearDraft(context)
+            thread {
+                val text = binding.edit.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    viewModel.createPost(text)
+                    // Успешно сохранили — очищаем черновик
+                    DraftRepository.clearDraft(context)
+                }
+                findNavController().navigateUp()
             }
-            findNavController().navigateUp()
-
         }
 
         // 4. Перехватываем системную кнопку "Назад"

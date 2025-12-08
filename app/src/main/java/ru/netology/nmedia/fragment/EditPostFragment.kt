@@ -30,16 +30,26 @@ class EditPostFragment : Fragment() {
         }
 
         // Подписываемся на список постов и ищем нужный
-        viewModel.get().observe(viewLifecycleOwner) { posts ->
-            val postToEdit = posts.find { it.id == postId }
-            if (postToEdit != null) {
-                viewModel.edit(postToEdit) // устанавливаем редактируемый пост
-                binding.edit.setText(postToEdit.content)
-                binding.edit.setSelection(binding.edit.text.length)
-            } else {
-                //Пост не найден — возвращаемся
-                findNavController().navigateUp()
-            }
+//        viewModel.get().observe(viewLifecycleOwner) { posts ->
+//            val postToEdit = posts.find { it.id == postId }
+//            if (postToEdit != null) {
+//                viewModel.edit(postToEdit) // устанавливаем редактируемый пост
+//                binding.edit.setText(postToEdit.content)
+//                binding.edit.setSelection(binding.edit.text.length)
+//            } else {
+//                //Пост не найден — возвращаемся
+//                findNavController().navigateUp()
+//            }
+//        }
+        // НЕТ .observe() — просто вызов функции
+        val posts = viewModel.get() // List<Post>
+        val postToEdit = posts.find { it.id == postId }
+        if (postToEdit != null) {
+            viewModel.edit(postToEdit)
+            binding.edit.setText(postToEdit.content)
+            binding.edit.setSelection(binding.edit.text.length)
+        } else {
+            findNavController().navigateUp()
         }
 
         binding.ok.setOnClickListener {

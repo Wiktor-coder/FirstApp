@@ -25,4 +25,7 @@
     <string name="channel_remote_name">Уведомление с сервера</string>
     <string name="channel_remote_description">Уведомление с удалённго сервера</string>
     <string name="notification_user_shared">%1$s поделился постом</string>
+    <string name="empty_post">Пустой пост</string>
+    <string name="retry_loading">retry loading</string>
+    <string name="error_loading">error loading</string>
 </resources>

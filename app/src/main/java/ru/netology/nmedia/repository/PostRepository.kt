@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import ru.netology.nmedia.dto.Post
 
 interface PostRepository {
-    fun get(): LiveData<List<Post>> //получить список
+    fun get(): List<Post> //получить список
 
     fun likeById(id: Long) //лайк
 
@@ -12,5 +12,5 @@ interface PostRepository {
 
     fun removeById(id: Long) //удаление
 
-    fun save(post: Post) //редактирование, создоние нового поста
+    fun save(post: Post): Post //редактирование, создоние нового поста
 }

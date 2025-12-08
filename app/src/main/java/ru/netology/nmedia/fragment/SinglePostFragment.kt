@@ -10,10 +10,10 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.utils.toFormattedDate
 import ru.netology.nmedia.viewmodel.PostViewModel
 
 class SinglePostFragment : Fragment() {
@@ -41,13 +41,20 @@ class SinglePostFragment : Fragment() {
         }
 
         // Подписываемся на список постов
-        viewModel.get().observe(viewLifecycleOwner) { posts ->
-            val post = posts.find { it.id == postId }
-            if (post != null) {
-                bind(post)
-            } else {
-                findNavController().navigateUp()
-            }
+//        viewModel.get().observe(viewLifecycleOwner) { posts ->
+//            val post = posts.find { it.id == postId }
+//            if (post != null) {
+//                bind(post)
+//            } else {
+//                findNavController().navigateUp()
+//            }
+//        }
+        val posts = viewModel.get()
+        val post = posts.find { it.id == postId }
+        if (post != null) {
+            bind(post)
+        } else {
+            findNavController().navigateUp()
         }
 
         // Кнопка "Назад" — системная, но можно добавить toolbar, если нужно
@@ -56,7 +63,7 @@ class SinglePostFragment : Fragment() {
     private fun bind(post: Post) {
         with(binding) {
             author.text = post.author
-            published.text = post.published
+            published.text = post.published.toFormattedDate()
             content.text = post.content
             Like.text = post.likeCount.toString()
             Like.isChecked = post.likedByMe
