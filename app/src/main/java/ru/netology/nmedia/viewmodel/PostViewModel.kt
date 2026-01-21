@@ -26,7 +26,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: PostRepository = PostRepositorySQLiteImpl()
 //    private val repository = PostRepositorySQLiteImpl.newInstance(application)
 
-    private val _data = MutableLiveData(FeedModel())
+    private val _data = MutableLiveData<FeedModel>(FeedModel())
 
     val data: LiveData<FeedModel>
         get() = _data
@@ -69,17 +69,30 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     fun get(): List<Post> = repository.get()
 
-    fun likeById(id: Long) = {
+    fun likeById(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.likeById(id)
-                // обновляем данные
-                loadPost()
+                val likedPost = repository.likeById(id)
+
+                _data.postValue(FeedModel(
+                    posts=_data.value?.posts.orEmpty()
+                        .map { if (it.id == id) likedPost else it }))
             } catch (e: IOException) {
-                FeedModel(error = true)
-            }.also { _data::postValue }
+                _data.postValue(FeedModel(error = true))
+            }
         }
     }
+//    fun likeById(id: Long) = {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            try {
+//                repository.likeById(id)
+//                // обновляем данные
+//                loadPost()
+//            } catch (e: IOException) {
+//                FeedModel(error = true)
+//            }.also { _data::postValue }
+//        }
+//    }
     fun shareById(id: Long) = repository.shareById(id)
     fun removeById(id: Long) = repository.removeById(id)
 

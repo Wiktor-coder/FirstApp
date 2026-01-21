@@ -6,7 +6,7 @@ import ru.netology.nmedia.dto.Post
 interface PostRepository {
     fun get(): List<Post> //получить список
 
-    fun likeById(id: Long) //лайк
+    fun likeById(id: Long): Post //лайк
 
     fun shareById(id: Long) //поделится
 
