@@ -6,10 +6,12 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.*
 import okhttp3.Dispatcher
 import okio.IOException
@@ -22,102 +24,126 @@ import java.time.LocalDate
 import kotlin.concurrent.thread
 import kotlin.time.Clock
 
-class PostViewModel(application: Application) : AndroidViewModel(application) {
+class PostViewModel : ViewModel() {
     private val repository: PostRepository = PostRepositorySQLiteImpl()
-//    private val repository = PostRepositorySQLiteImpl.newInstance(application)
 
     private val _data = MutableLiveData<FeedModel>(FeedModel())
+    val data: LiveData<FeedModel> = _data
 
-    val data: LiveData<FeedModel>
-        get() = _data
-
-    // Приватное изменяемое состояние
     private val _edited = MutableLiveData<Post?>()
-
-    // Публичное неизменяемое состояние для UI
     val edited: LiveData<Post?> = _edited
-
-    //состояние: идёт ли редактирование
-    // true, если _edited != null
     val isEditing: LiveData<Boolean> = _edited.map { it != null }
 
     private val _postCreated = SingleLiveEvent<Unit>()
-
-    val postCreated: LiveData<Unit>
-        get() = _postCreated
+    val postCreated: LiveData<Unit> = _postCreated
 
     init {
         loadPost()
     }
 
     fun loadPost() {
-        thread {
-            //начинаем загрузку
-            _data.postValue(FeedModel(loading = true))
+        // Просто создаем и запускаем новый поток каждый раз
+        Thread {
             try {
-                //данные успешно получены
-
+                _data.postValue(FeedModel(loading = true))
                 val posts = repository.get()
-                FeedModel(posts = posts, empty = posts.isEmpty())
+                _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
             } catch (e: IOException) {
-                // получена ошибка
-                FeedModel(error = true)
-            }.also(_data::postValue)
-        }
-    }
-
-
-    fun get(): List<Post> = repository.get()
-
-    fun likeById(id: Long) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val likedPost = repository.likeById(id)
-
-                _data.postValue(FeedModel(
-                    posts=_data.value?.posts.orEmpty()
-                        .map { if (it.id == id) likedPost else it }))
-            } catch (e: IOException) {
+                e.printStackTrace()
+                _data.postValue(FeedModel(error = true))
+            } catch (e: Exception) {
+                e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
             }
-        }
+        }.start()
     }
-//    fun likeById(id: Long) = {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            try {
-//                repository.likeById(id)
-//                // обновляем данные
-//                loadPost()
-//            } catch (e: IOException) {
-//                FeedModel(error = true)
-//            }.also { _data::postValue }
-//        }
-//    }
-    fun shareById(id: Long) = repository.shareById(id)
-    fun removeById(id: Long) = repository.removeById(id)
 
-    //Запуск редактирования: передаём пост, который хотим редактировать
+    // Удалите этот метод полностью - он вызывает NetworkOnMainThreadException!
+    // fun get(): List<Post> = repository.get()
+
+    fun likeById(id: Long) {
+        Thread {
+            try {
+                val likedPost = repository.likeById(id)
+                val currentPosts = _data.value?.posts.orEmpty()
+                val updatedPosts = currentPosts.map {
+                    if (it.id == id) likedPost else it
+                }
+                _data.postValue(FeedModel(posts = updatedPosts))
+            } catch (e: IOException) {
+                e.printStackTrace()
+                _data.postValue(FeedModel(error = true))
+            }
+        }.start()
+    }
+
+    fun shareById(id: Long) {
+        Thread {
+            try {
+                repository.shareById(id)
+                // Не вызываем loadPost() здесь, чтобы избежать лишних запросов
+                // Просто обновляем счетчик шеринга через локальное обновление
+                val currentPosts = _data.value?.posts.orEmpty()
+                val updatedPosts = currentPosts.map { post ->
+                    if (post.id == id) {
+                        post.copy(shareCount = post.shareCount + 1)
+                    } else post
+                }
+                _data.postValue(FeedModel(posts = updatedPosts))
+            } catch (e: IOException) {
+                e.printStackTrace()
+                _data.postValue(FeedModel(error = true))
+            }
+        }.start()
+    }
+
+    fun removeById(id: Long) {
+        Thread {
+            try {
+                repository.removeById(id)
+                // Удаляем пост из текущего списка
+                val currentPosts = _data.value?.posts.orEmpty()
+                val updatedPosts = currentPosts.filter { it.id != id }
+                _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
+            } catch (e: IOException) {
+                e.printStackTrace()
+                _data.postValue(FeedModel(error = true))
+            }
+        }.start()
+    }
+
     fun edit(post: Post) {
-        _edited.value = post
+        _edited.postValue(post)
     }
 
-    //Сохранение изменений для редактирования
     fun save(newContent: String) {
         edited.value?.let { post ->
             if (post.content != newContent) {
-                repository.save(post.copy(content = newContent))
+                Thread {
+                    try {
+                        val savedPost = repository.save(post.copy(content = newContent))
+                        // Обновляем пост в списке
+                        val currentPosts = _data.value?.posts.orEmpty()
+                        val updatedPosts = currentPosts.map {
+                            if (it.id == savedPost.id) savedPost else it
+                        }
+                        _data.postValue(FeedModel(posts = updatedPosts))
+                        _edited.postValue(null)
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        _data.postValue(FeedModel(error = true))
+                    }
+                }.start()
+            } else {
+                cancelEdited()
             }
         }
-        //Завершаем редактирование
-        cancelEdited()
     }
 
-    //Отмена редактирования
     fun cancelEdited() {
-        _edited.value = null
+        _edited.postValue(null)
     }
 
-    //новый пост
     @RequiresApi(Build.VERSION_CODES.O)
     fun createPost(content: String) {
         if (content.isNotBlank()) {
@@ -130,17 +156,22 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 shareCount = 0,
                 likedByMe = false,
             )
-            repository.save(newPost)
-            loadPost()
-            _postCreated.postValue(Unit)
+            Thread {
+                try {
+                    val savedPost = repository.save(newPost)
+                    // Добавляем новый пост в начало списка
+                    val currentPosts = _data.value?.posts.orEmpty()
+                    val updatedPosts = listOf(savedPost) + currentPosts
+                    _data.postValue(FeedModel(posts = updatedPosts))
+                    _postCreated.postValue(Unit)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    _data.postValue(FeedModel(error = true))
+                }
+            }.start()
         }
     }
 
-    //проверка наличия видео
     fun hasVideo(post: Post): Boolean = !post.video.isNullOrBlank()
-
-    //возвращаем URL или null
     fun getVideoUrl(post: Post): String? = post.video?.trim()
-
-
 }

@@ -11,10 +11,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okio.IOException
 import ru.netology.nmedia.dto.Post
 
-class PostRepositorySQLiteImpl: PostRepository {
+class PostRepositorySQLiteImpl : PostRepository {
     // для получения списка
     private val postListType = object : TypeToken<List<Post>>() {}.type
-    companion object{
+
+    companion object {
         const val BASE_URL = "http://10.0.2.2:9999"
 
         val jsonType = "application/json".toMediaType()
@@ -25,10 +26,10 @@ class PostRepositorySQLiteImpl: PostRepository {
         .connectTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    override fun get(): List<Post> {
+    override  fun get(): List<Post> {
         // создаём запрос
         val request = Request.Builder()
-            .url("${ BASE_URL}/api/slow/posts")
+            .url("${BASE_URL}/api/slow/posts")
             .build()
 
         return client.newCall(request)
@@ -36,7 +37,7 @@ class PostRepositorySQLiteImpl: PostRepository {
             .use { response ->
                 if (!response.isSuccessful) throw IOException("Unexpected code $response")
                 val body = response.body?.string() ?: throw IOException("Empty response body")
-                val listType = object : TypeToken<List<Post>>(){}.type
+                val listType = object : TypeToken<List<Post>>() {}.type
                 gson.fromJson(body, listType)
             }
 //        val call = client.newCall(request)
@@ -57,7 +58,7 @@ class PostRepositorySQLiteImpl: PostRepository {
 //        }
 //    }
 
-    override fun likeById(id: Long): Post {
+    override  fun likeById(id: Long): Post {
         val request = Request.Builder()
             .url("${BASE_URL}/api/slow/posts/$id/likes")
             .post(RequestBody.EMPTY)
@@ -84,15 +85,27 @@ class PostRepositorySQLiteImpl: PostRepository {
 //        refresh()
     }
 
-    override fun shareById(id: Long) {
-       // dao.shareById(id)
+    override  fun shareById(id: Long) {
+        val request = Request.Builder()
+            .url("${BASE_URL}/api/slow/posts/$id/shares")
+            .post(RequestBody.EMPTY)
+            .build()
+
+        client.newCall(request)
+            .execute()
+            .use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("Unexpected code $response")
+                }
+            }
+        // dao.shareById(id)
 //        refresh()
     }
 
-    override fun removeById(id: Long) {
+    override  fun removeById(id: Long) {
         // создаём запрос
         val request = Request.Builder()
-            .url("${ BASE_URL}/api/slow/posts/$id")
+            .url("${BASE_URL}/api/slow/posts/$id")
             .delete()
             .build()
 
@@ -108,17 +121,27 @@ class PostRepositorySQLiteImpl: PostRepository {
 //        refresh()
     }
 
-    override fun save(post: Post): Post {
+    override  fun save(post: Post): Post {
         // создаём запрос
         val request = Request.Builder()
-            .url("${ BASE_URL}/api/slow/posts")
+            .url("${BASE_URL}/api/slow/posts")
             .post(gson.toJson(post).toRequestBody(jsonType))
             .build()
 
-        val call = client.newCall(request)
-        val response = call.execute()
-        val stringBody = response.body.string()
-        return gson.fromJson(stringBody, Post::class.java)
+        return client.newCall(request)
+            .execute()
+            .use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("Unexpected code $response")
+                }
+                val body = response.body?.string() ?: throw IOException("Empty response body")
+                gson.fromJson(body, Post::class.java)
+            }
+
+//        val call = client.newCall(request)
+//        val response = call.execute()
+//        val stringBody = response.body.string()
+//        return gson.fromJson(stringBody, Post::class.java)
 
         //dao.save(PostEntity.fromPost(post))
 //        refresh()

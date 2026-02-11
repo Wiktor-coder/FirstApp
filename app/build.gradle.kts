@@ -5,6 +5,12 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    }
+}
+
 android {
     namespace = "ru.netology.nmedia"
     compileSdk = 36
@@ -40,9 +46,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+//    kotlinOptions {
+//        jvmTarget = "11"
+//    }
 }
 
 dependencies {

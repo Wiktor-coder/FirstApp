@@ -27,14 +27,9 @@ class NewPostFragment : Fragment() {
     ): View? {
         val binding = FragmentNewPostBinding.inflate(layoutInflater, container, false)
         val viewModel by activityViewModels<PostViewModel>()
-        //val viewModel by viewModels<PostViewModel>(::requireParentFragment)
-
-        arguments?.textArg.let(binding.edit::setText) // ?
-
         val context = requireContext()
 
-        // 1. Загружаем черновик (если есть)
-        //Пользователь открывает "Новый пост" -> видит черновик (если был)
+        // Загружаем черновик
         DraftRepository.loadDraft(context)?.let { draft ->
             if (draft.isNotBlank()) {
                 binding.edit.setText(draft)
@@ -42,34 +37,27 @@ class NewPostFragment : Fragment() {
             }
         }
 
-        // 2. Если передан текст через share (например, извне), он имеет приоритет над черновиком
-        // Пользователь нажимает «Назад» -> текст сохраняется как черновик.
+        // Текст из share
         arguments?.textArg?.let { sharedText ->
             if (sharedText.isNotBlank()) {
                 binding.edit.setText(sharedText)
                 binding.edit.setSelection(sharedText.length)
-                // Очищаем черновик, так как пользователь явно поделился текстом
                 DraftRepository.clearDraft(context)
             }
         }
 
-        // 3. обработчик нажатия на кнопку добавления
-        // Пользователь нажимает «ОК» -> пост создаётся, черновик удаляется.
         binding.ok.setOnClickListener {
-            thread {
-                val text = binding.edit.text.toString().trim()
-                if (text.isNotEmpty()) {
-                    viewModel.createPost(text)
-                    // Успешно сохранили — очищаем черновик
-                    DraftRepository.clearDraft(context)
-                }
+            val text = binding.edit.text.toString().trim()
+            if (text.isNotEmpty()) {
+                // Создаем пост и сразу закрываем
+                viewModel.createPost(text)
+                DraftRepository.clearDraft(context)
+                findNavController().navigateUp() // Закрываем сразу, не ждем ответа
+            } else {
                 findNavController().navigateUp()
             }
         }
 
-        // 4. Перехватываем системную кнопку "Назад"
-        // Пользователь делится текстом извне (через share)
-        // -> черновик игнорируется, текст подставляется, черновик очищается.
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val currentText = binding.edit.text.toString().trim()

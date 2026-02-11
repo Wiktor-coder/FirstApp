@@ -49,12 +49,20 @@ class SinglePostFragment : Fragment() {
 //                findNavController().navigateUp()
 //            }
 //        }
-        val posts = viewModel.get()
-        val post = posts.find { it.id == postId }
-        if (post != null) {
-            bind(post)
-        } else {
-            findNavController().navigateUp()
+//        val posts = viewModel.get()
+//        val post = posts.find { it.id == postId }
+//        if (post != null) {
+//            bind(post)
+//        } else {
+//            findNavController().navigateUp()
+//        }
+        viewModel.data.observe(viewLifecycleOwner) { feedModel ->
+            val post = feedModel.posts.find { it.id == postId }
+            if (post != null) {
+                bind(post)
+            } else if (!feedModel.loading && !feedModel.error) {
+                findNavController().navigateUp()
+            }
         }
 
         // Кнопка "Назад" — системная, но можно добавить toolbar, если нужно

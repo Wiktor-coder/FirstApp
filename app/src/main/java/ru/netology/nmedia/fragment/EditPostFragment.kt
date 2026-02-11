@@ -42,14 +42,27 @@ class EditPostFragment : Fragment() {
 //            }
 //        }
         // НЕТ .observe() — просто вызов функции
-        val posts = viewModel.get() // List<Post>
-        val postToEdit = posts.find { it.id == postId }
-        if (postToEdit != null) {
-            viewModel.edit(postToEdit)
-            binding.edit.setText(postToEdit.content)
-            binding.edit.setSelection(binding.edit.text.length)
-        } else {
-            findNavController().navigateUp()
+//        val posts = viewModel.get() // List<Post>
+//        val postToEdit = posts.find { it.id == postId }
+//        if (postToEdit != null) {
+//            viewModel.edit(postToEdit)
+//            binding.edit.setText(postToEdit.content)
+//            binding.edit.setSelection(binding.edit.text.length)
+//        } else {
+//            findNavController().navigateUp()
+//        }
+
+        // Наблюдаем за списком постов из LiveData
+        viewModel.data.observe(viewLifecycleOwner) { feedModel ->
+            val postToEdit = feedModel.posts.find { it.id == postId }
+            if (postToEdit != null) {
+                viewModel.edit(postToEdit)
+                binding.edit.setText(postToEdit.content)
+                binding.edit.setSelection(binding.edit.text.length)
+            } else if (!feedModel.loading && !feedModel.error) {
+                // Пост не найден — возвращаемся
+                findNavController().navigateUp()
+            }
         }
 
         binding.ok.setOnClickListener {
