@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swiperefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,32 +16,33 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/container"
-        android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_width="match_parent"
         android:orientation="vertical"
+        android:nestedScrollingEnabled="true"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:context=".fragment.FeedFragment"
         tools:listitem="@layout/card_post" />
-<!--    app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
+    <!--    app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:contentDescription="@string/post_save"
         android:id="@+id/add"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/common_space"
+        android:layout_width="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="@dimen/common_space"
-        android:contentDescription="@string/post_save"
         app:srcCompat="@drawable/ic_add_24" />
 
     <TextView
         android:id="@+id/retryTitle"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
+        android:layout_width="wrap_content"
         android:text="@string/error_loading"
         app:layout_constraintBottom_toTopOf="@+id/retryButton"
         app:layout_constraintEnd_toEndOf="parent"
@@ -45,8 +52,8 @@
 
     <Button
         android:id="@+id/retryButton"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
         android:text="@string/retry_loading"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -55,14 +62,14 @@
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/errorGroup"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
         app:constraint_referenced_ids="retryTitle,retryButton" />
 
     <TextView
         android:id="@+id/emptyText"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
         android:text="@string/empty_post"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -72,57 +79,59 @@
 
     <ProgressBar
         android:id="@+id/progress"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-<!--    <EditText-->
-<!--        android:id="@+id/content"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:background="@android:color/transparent"-->
-<!--        android:hint="@string/post_content"-->
-<!--        android:importantForAutofill="no"-->
-<!--        android:inputType="textMultiLine"-->
-<!--        android:padding="10dp"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toStartOf="@id/save"-->
-<!--        app:layout_constraintStart_toStartOf="parent" />-->
+    <!--    <EditText-->
+    <!--        android:id="@+id/content"-->
+    <!--        android:layout_width="0dp"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:background="@android:color/transparent"-->
+    <!--        android:hint="@string/post_content"-->
+    <!--        android:importantForAutofill="no"-->
+    <!--        android:inputType="textMultiLine"-->
+    <!--        android:padding="10dp"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toStartOf="@id/save"-->
+    <!--        app:layout_constraintStart_toStartOf="parent" />-->
 
-<!--    <ImageView-->
-<!--        android:id="@+id/save"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:padding="10dp"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:srcCompat="@drawable/outline_check_circle_24" />-->
+    <!--    <ImageView-->
+    <!--        android:id="@+id/save"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:padding="10dp"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:srcCompat="@drawable/outline_check_circle_24" />-->
 
-<!--    <ImageView-->
-<!--        android:id="@+id/closed"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:padding="10dp"-->
-<!--        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:srcCompat="@drawable/ic_icons8_close" />-->
+    <!--    <ImageView-->
+    <!--        android:id="@+id/closed"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:padding="10dp"-->
+    <!--        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:srcCompat="@drawable/ic_icons8_close" />-->
 
-<!--    <androidx.constraintlayout.widget.Barrier-->
-<!--        android:id="@+id/bottomBarrier"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:barrierDirection="top"-->
-<!--        app:constraint_referenced_ids="content, save, closed" />-->
+    <!--    <androidx.constraintlayout.widget.Barrier-->
+    <!--        android:id="@+id/bottomBarrier"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        app:barrierDirection="top"-->
+    <!--        app:constraint_referenced_ids="content, save, closed" />-->
 
-<!--    <androidx.constraintlayout.widget.Group-->
-<!--        android:id="@+id/group"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:visibility="gone"-->
-<!--        app:constraint_referenced_ids="closed" />-->
+    <!--    <androidx.constraintlayout.widget.Group-->
+    <!--        android:id="@+id/group"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:visibility="gone"-->
+    <!--        app:constraint_referenced_ids="closed" />-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

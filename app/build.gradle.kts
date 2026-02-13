@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp3.okhttp)
     implementation(libs.kotlinx.datetime)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

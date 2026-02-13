@@ -42,10 +42,11 @@ class PostViewModel : ViewModel() {
     }
 
     fun loadPost() {
+        _data.postValue(FeedModel(loading = true))
         // Просто создаем и запускаем новый поток каждый раз
         thread {
             try {
-                _data.postValue(FeedModel(loading = true))
+
                 val posts = repository.get()
                 _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
             } catch (e: IOException) {
@@ -60,18 +61,31 @@ class PostViewModel : ViewModel() {
 
     // Удалите этот метод полностью - он вызывает NetworkOnMainThreadException!
     // fun get(): List<Post> = repository.get()
-
     fun likeById(id: Long) {
+        // 1. Сначала обновляем UI
+        val currentPosts = _data.value?.posts.orEmpty()
+        val updatedPosts = currentPosts.map { post ->
+            if (post.id == id) {
+                val newLikedByMe = !post.likedByMe
+                post.copy(
+                    likedByMe = newLikedByMe,
+                    likeCount = if (newLikedByMe) post.likeCount + 1 else post.likeCount - 1
+                )
+            } else {
+                post
+            }
+        }
+        _data.value = FeedModel(posts = updatedPosts)
+
+        // 2. Отправляем запрос на сервер
         thread {
             try {
-                val likedPost = repository.likeById(id)
-                val currentPosts = _data.value?.posts.orEmpty()
-                val updatedPosts = currentPosts.map {
-                    if (it.id == id) likedPost else it
-                }
-                _data.postValue(FeedModel(posts = updatedPosts))
+                repository.likeById(id)
+                // Можно ничего не делать, если сервер ответил успешно
             } catch (e: IOException) {
                 e.printStackTrace()
+                // В случае ошибки - откатываем изменения
+                _data.postValue(FeedModel(posts = currentPosts))
                 _data.postValue(FeedModel(error = true))
             }
         }

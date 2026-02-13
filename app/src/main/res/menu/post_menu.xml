@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-<item android:id="@+id/remove"
-    android:title="@string/remove"/>
-    <item android:id="@+id/edit" android:title="@string/edit" />
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/remove"
+        android:title="@string/remove" />
+    <item
+        android:id="@+id/edit"
+        android:title="@string/edit" />
+    <item
+        android:id="@+id/menu_refresh"
+        android:title="@string/refresh"
+        app:showAsAction="never" />
 </menu>

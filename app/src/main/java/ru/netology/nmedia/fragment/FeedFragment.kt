@@ -2,6 +2,7 @@ package ru.netology.nmedia.fragment
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,18 +24,34 @@ import ru.netology.nmedia.dto.Post
 class FeedFragment : Fragment() {
 
     private val viewModel: PostViewModel by activityViewModels()
+    private var _binding: FragmentFeedBinding? = null
+    private val binding get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val binding = FragmentFeedBinding.inflate(inflater, container, false)
+        _binding = FragmentFeedBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        //val viewModel by viewModels<PostViewModel>(::requireParentFragment)
-        //val viewModel by activityViewModels<PostViewModel>()
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
+        // --- НАСТРОЙКА SWIPE TO REFRESH ---
+        binding.swiperefresh.apply {
+            // Устанавливаем цвета индикатора
+            setColorSchemeResources(
+                R.color.purple_500,
+                android.R.color.holo_green_dark,
+                android.R.color.holo_orange_dark
+            )
 
+            setOnRefreshListener {
+                viewModel.loadPost()
+            }
+        }
         // Настройка RecyclerView
         val adapter = PostAdapter(
             object : PostListener {
@@ -82,27 +99,34 @@ class FeedFragment : Fragment() {
         )
         binding.container.adapter = adapter
 
+        // Наблюдение за состоянием
         viewModel.data.observe(viewLifecycleOwner) { state ->
             adapter.submitList(state.posts)
+            // Управление видимостью элементов
             binding.progress.isVisible = state.loading
             binding.errorGroup.isVisible = state.error
             binding.emptyText.isVisible = state.empty
+
+            //ВАЖНО: скрываем индикатор SwipeRefreshLayout, когда загрузка закончена
+            if (!state.loading) {
+                binding.swiperefresh.post {
+                    binding.swiperefresh.isRefreshing = false
+                }
+
+            }
         }
 
         binding.retryButton.setOnClickListener {
             viewModel.loadPost()
         }
-        // Подписка на список постов
-//        viewModel.get().observe(viewLifecycleOwner) { posts ->
-//            adapter.submitList(posts)
-//        }
 
         binding.add.setOnClickListener {
             findNavController().navigate(R.id.action_feedFragment_to_newPostFragment2)
         }
-
-        return binding.root
+        //Применяем системные отступы
+//        applyInsets(binding.root)
     }
+
 
     //системные отступы в приложении
     private fun applyInsets(root: View) {
@@ -118,5 +142,10 @@ class FeedFragment : Fragment() {
             )
             insets
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

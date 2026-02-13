@@ -28,4 +28,5 @@
     <string name="empty_post">Пустой пост</string>
     <string name="retry_loading">retry loading</string>
     <string name="error_loading">error loading</string>
+    <string name="refresh">menu_refresh</string>
 </resources>
