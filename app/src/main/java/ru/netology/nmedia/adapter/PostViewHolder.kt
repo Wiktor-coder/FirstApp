@@ -33,9 +33,9 @@ class PostViewHolder(
                 listener.onLike(post)
             }
 
-            Share.setOnClickListener {
-                listener.onShare(post)
-            }
+//            Share.setOnClickListener {
+//                listener.onShare(post)
+//            }
 
             menu.setOnClickListener {
                 showPopupMenu(it, post)

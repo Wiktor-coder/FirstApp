@@ -8,7 +8,8 @@ import ru.netology.nmedia.dto.Post
 
 interface PostListener {
     fun onLike(post: Post) //лайк
-    fun onShare(post: Post) //поделится
+
+//    fun onShare(post: Post) //поделится
     fun onRemove(post: Post) //удалить
     fun onEdit(post: Post) //редактировать
 

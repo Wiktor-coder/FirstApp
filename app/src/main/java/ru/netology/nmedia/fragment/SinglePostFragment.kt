@@ -95,17 +95,17 @@ class SinglePostFragment : Fragment() {
                 viewModel.likeById(post.id)
             }
 
-            Share.setOnClickListener {
-                viewModel.shareById(post.id)
-                // Share intent
-                val intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, post.content)
-                }
-                val chooser = Intent.createChooser(intent, getString(R.string.chooser_share_post))
-                startActivity(chooser)
-            }
+//            Share.setOnClickListener {
+//                viewModel.shareById(post.id)
+//                // Share intent
+//                val intent = Intent().apply {
+//                    action = Intent.ACTION_SEND
+//                    type = "text/plain"
+//                    putExtra(Intent.EXTRA_TEXT, post.content)
+//                }
+//                val chooser = Intent.createChooser(intent, getString(R.string.chooser_share_post))
+//                startActivity(chooser)
+//            }
 
             menu.setOnClickListener {
                 showMenu(post)

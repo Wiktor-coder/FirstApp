@@ -43,17 +43,17 @@ class FeedFragment : Fragment() {
                 }
 
                 //поделится
-                override fun onShare(post: Post) {
-                    viewModel.shareById(post.id)
-                    val intent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, post.content)
-                    }
-                    val chooser =
-                        Intent.createChooser(intent, getString(R.string.chooser_share_post))
-                    startActivity(chooser)
-                }
+//                override fun onShare(post: Post) {
+//                    viewModel.shareById(post.id)
+//                    val intent = Intent().apply {
+//                        action = Intent.ACTION_SEND
+//                        type = "text/plain"
+//                        putExtra(Intent.EXTRA_TEXT, post.content)
+//                    }
+//                    val chooser =
+//                        Intent.createChooser(intent, getString(R.string.chooser_share_post))
+//                    startActivity(chooser)
+//                }
 
                 override fun onRemove(post: Post) {
                     viewModel.removeById(post.id)
