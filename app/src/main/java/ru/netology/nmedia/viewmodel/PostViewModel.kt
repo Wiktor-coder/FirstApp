@@ -43,7 +43,7 @@ class PostViewModel : ViewModel() {
 
     fun loadPost() {
         // Просто создаем и запускаем новый поток каждый раз
-        Thread {
+        thread {
             try {
                 _data.postValue(FeedModel(loading = true))
                 val posts = repository.get()
@@ -55,14 +55,14 @@ class PostViewModel : ViewModel() {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
             }
-        }.start()
+        }
     }
 
     // Удалите этот метод полностью - он вызывает NetworkOnMainThreadException!
     // fun get(): List<Post> = repository.get()
 
     fun likeById(id: Long) {
-        Thread {
+        thread {
             try {
                 val likedPost = repository.likeById(id)
                 val currentPosts = _data.value?.posts.orEmpty()
@@ -74,31 +74,31 @@ class PostViewModel : ViewModel() {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
             }
-        }.start()
+        }
     }
 
-    fun shareById(id: Long) {
-        Thread {
-            try {
-                repository.shareById(id)
-                // Не вызываем loadPost() здесь, чтобы избежать лишних запросов
-                // Просто обновляем счетчик шеринга через локальное обновление
-                val currentPosts = _data.value?.posts.orEmpty()
-                val updatedPosts = currentPosts.map { post ->
-                    if (post.id == id) {
-                        post.copy(shareCount = post.shareCount + 1)
-                    } else post
-                }
-                _data.postValue(FeedModel(posts = updatedPosts))
-            } catch (e: IOException) {
-                e.printStackTrace()
-                _data.postValue(FeedModel(error = true))
-            }
-        }.start()
-    }
+//    fun shareById(id: Long) {
+//        thread {
+//            try {
+//                repository.shareById(id)
+//                // Не вызываем loadPost() здесь, чтобы избежать лишних запросов
+//                // Просто обновляем счетчик шеринга через локальное обновление
+//                val currentPosts = _data.value?.posts.orEmpty()
+//                val updatedPosts = currentPosts.map { post ->
+//                    if (post.id == id) {
+//                        post.copy(shareCount = post.shareCount + 1)
+//                    } else post
+//                }
+//                _data.postValue(FeedModel(posts = updatedPosts))
+//            } catch (e: IOException) {
+//                e.printStackTrace()
+//                _data.postValue(FeedModel(error = true))
+//            }
+//        }
+//    }
 
     fun removeById(id: Long) {
-        Thread {
+        thread {
             try {
                 repository.removeById(id)
                 // Удаляем пост из текущего списка
@@ -109,7 +109,7 @@ class PostViewModel : ViewModel() {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
             }
-        }.start()
+        }
     }
 
     fun edit(post: Post) {
@@ -119,7 +119,7 @@ class PostViewModel : ViewModel() {
     fun save(newContent: String) {
         edited.value?.let { post ->
             if (post.content != newContent) {
-                Thread {
+                thread {
                     try {
                         val savedPost = repository.save(post.copy(content = newContent))
                         // Обновляем пост в списке
@@ -133,7 +133,7 @@ class PostViewModel : ViewModel() {
                         e.printStackTrace()
                         _data.postValue(FeedModel(error = true))
                     }
-                }.start()
+                }
             } else {
                 cancelEdited()
             }
@@ -156,7 +156,7 @@ class PostViewModel : ViewModel() {
                 shareCount = 0,
                 likedByMe = false,
             )
-            Thread {
+            thread {
                 try {
                     val savedPost = repository.save(newPost)
                     // Добавляем новый пост в начало списка
@@ -168,7 +168,7 @@ class PostViewModel : ViewModel() {
                     e.printStackTrace()
                     _data.postValue(FeedModel(error = true))
                 }
-            }.start()
+            }
         }
     }
 

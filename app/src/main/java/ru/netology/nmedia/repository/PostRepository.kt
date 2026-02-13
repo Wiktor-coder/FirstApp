@@ -8,7 +8,7 @@ interface PostRepository {
 
     fun likeById(id: Long): Post //лайк
 
-    fun shareById(id: Long) //поделится
+//    fun shareById(id: Long) //поделится
 
     fun removeById(id: Long) //удаление
 
