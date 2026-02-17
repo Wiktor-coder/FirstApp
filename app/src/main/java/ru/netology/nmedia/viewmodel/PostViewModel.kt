@@ -1,28 +1,16 @@
 package ru.netology.nmedia.viewmodel
 
-import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.datetime.*
-import okhttp3.Dispatcher
-import okio.IOException
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.SingleLiveEvent
-import java.time.LocalDate
-import kotlin.concurrent.thread
-import kotlin.time.Clock
 
 class PostViewModel : ViewModel() {
     private val repository: PostRepository = PostRepositorySQLiteImpl()
@@ -43,24 +31,19 @@ class PostViewModel : ViewModel() {
 
     fun loadPost() {
         _data.postValue(FeedModel(loading = true))
-        // Просто создаем и запускаем новый поток каждый раз
-        thread {
-            try {
 
-                val posts = repository.get()
-                _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
-            } catch (e: IOException) {
-                e.printStackTrace()
-                _data.postValue(FeedModel(error = true))
-            } catch (e: Exception) {
+        repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
+            override fun onSuccess(result: List<Post>) {
+                _data.postValue(FeedModel(posts = result, empty = result.isEmpty()))
+            }
+
+            override fun onError(e: Exception) {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
             }
-        }
+        })
     }
 
-    // Удалите этот метод полностью - он вызывает NetworkOnMainThreadException!
-    // fun get(): List<Post> = repository.get()
     fun likeById(id: Long) {
         // 1. Сначала обновляем UI
         val currentPosts = _data.value?.posts.orEmpty()
@@ -78,17 +61,33 @@ class PostViewModel : ViewModel() {
         _data.value = FeedModel(posts = updatedPosts)
 
         // 2. Отправляем запрос на сервер
-        thread {
-            try {
-                repository.likeById(id)
-                // Можно ничего не делать, если сервер ответил успешно
-            } catch (e: IOException) {
+        repository.likeByAsync(id, object : PostRepository.PostCallback<Post> {
+            override fun onSuccess(result: Post) {
+                // Можно по необходимости обновит конкретный пост
+                val updatedPost = _data.value?.posts?.map {
+                    if (it.id == result.id) result else it
+                }
+                updatedPost?.let { _data.postValue((FeedModel(posts = it))) }
+            }
+
+            override fun onError(e: Exception) {
                 e.printStackTrace()
-                // В случае ошибки - откатываем изменения
+                // В случае ошибки откатываем изменения
                 _data.postValue(FeedModel(posts = currentPosts))
                 _data.postValue(FeedModel(error = true))
             }
-        }
+        })
+//        thread {
+//            try {
+//                repository.likeById(id)
+//                // Можно ничего не делать, если сервер ответил успешно
+//            } catch (e: IOException) {
+//                e.printStackTrace()
+//                // В случае ошибки - откатываем изменения
+//                _data.postValue(FeedModel(posts = currentPosts))
+//                _data.postValue(FeedModel(error = true))
+//            }
+//        }
     }
 
 //    fun shareById(id: Long) {
@@ -112,18 +111,32 @@ class PostViewModel : ViewModel() {
 //    }
 
     fun removeById(id: Long) {
-        thread {
-            try {
-                repository.removeById(id)
+        repository.removeByAsync(id, object : PostRepository.PostCallback<Unit> {
+            override fun onSuccess(result: Unit) {
                 // Удаляем пост из текущего списка
                 val currentPosts = _data.value?.posts.orEmpty()
                 val updatedPosts = currentPosts.filter { it.id != id }
                 _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
-            } catch (e: IOException) {
+            }
+
+            override fun onError(e: Exception) {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
+
             }
-        }
+        })
+//        thread {
+//            try {
+//                repository.removeById(id)
+//                // Удаляем пост из текущего списка
+//                val currentPosts = _data.value?.posts.orEmpty()
+//                val updatedPosts = currentPosts.filter { it.id != id }
+//                _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
+//            } catch (e: IOException) {
+//                e.printStackTrace()
+//                _data.postValue(FeedModel(error = true))
+//            }
+//        }
     }
 
     fun edit(post: Post) {
@@ -133,26 +146,51 @@ class PostViewModel : ViewModel() {
     fun save(newContent: String) {
         edited.value?.let { post ->
             if (post.content != newContent) {
-                thread {
-                    try {
-                        val savedPost = repository.save(post.copy(content = newContent))
-                        // Обновляем пост в списке
-                        val currentPosts = _data.value?.posts.orEmpty()
-                        val updatedPosts = currentPosts.map {
-                            if (it.id == savedPost.id) savedPost else it
+                repository.saveByAsync(
+                    post.copy(content = newContent),
+                    object : PostRepository.PostCallback<Post> {
+                        override fun onSuccess(result: Post) {
+                            // Обновляем пост в списке
+                            val currentPosts = _data.value?.posts.orEmpty()
+                            val updatedPosts = currentPosts.map {
+                                if (it.id == result.id) result else it
+                            }
+                            _data.postValue(FeedModel(posts = updatedPosts))
+                            _edited.postValue(null)
                         }
-                        _data.postValue(FeedModel(posts = updatedPosts))
-                        _edited.postValue(null)
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                        _data.postValue(FeedModel(error = true))
-                    }
-                }
-            } else {
-                cancelEdited()
+
+                        override fun onError(e: Exception) {
+                            e.printStackTrace()
+                            _data.postValue(FeedModel(error = true))
+                        }
+
+                    })
             }
         }
     }
+//    fun save(newContent: String) {
+//        edited.value?.let { post ->
+//            if (post.content != newContent) {
+//                thread {
+//                    try {
+//                        val savedPost = repository.save(post.copy(content = newContent))
+//                        // Обновляем пост в списке
+//                        val currentPosts = _data.value?.posts.orEmpty()
+//                        val updatedPosts = currentPosts.map {
+//                            if (it.id == savedPost.id) savedPost else it
+//                        }
+//                        _data.postValue(FeedModel(posts = updatedPosts))
+//                        _edited.postValue(null)
+//                    } catch (e: IOException) {
+//                        e.printStackTrace()
+//                        _data.postValue(FeedModel(error = true))
+//                    }
+//                }
+//            } else {
+//                cancelEdited()
+//            }
+//        }
+//    }
 
     fun cancelEdited() {
         _edited.postValue(null)
@@ -170,19 +208,34 @@ class PostViewModel : ViewModel() {
                 shareCount = 0,
                 likedByMe = false,
             )
-            thread {
-                try {
-                    val savedPost = repository.save(newPost)
+
+            repository.saveByAsync(newPost, object : PostRepository.PostCallback<Post> {
+                override fun onSuccess(result: Post) {
                     // Добавляем новый пост в начало списка
                     val currentPosts = _data.value?.posts.orEmpty()
-                    val updatedPosts = listOf(savedPost) + currentPosts
+                    val updatedPosts = listOf(result) + currentPosts
                     _data.postValue(FeedModel(posts = updatedPosts))
                     _postCreated.postValue(Unit)
-                } catch (e: IOException) {
+                }
+
+                override fun onError(e: Exception) {
                     e.printStackTrace()
                     _data.postValue(FeedModel(error = true))
                 }
-            }
+            })
+//            thread {
+//                try {
+//                    val savedPost = repository.save(newPost)
+//                    // Добавляем новый пост в начало списка
+//                    val currentPosts = _data.value?.posts.orEmpty()
+//                    val updatedPosts = listOf(savedPost) + currentPosts
+//                    _data.postValue(FeedModel(posts = updatedPosts))
+//                    _postCreated.postValue(Unit)
+//                } catch (e: IOException) {
+//                    e.printStackTrace()
+//                    _data.postValue(FeedModel(error = true))
+//                }
+//            }
         }
     }
 
