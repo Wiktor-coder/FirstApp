@@ -19,7 +19,7 @@ interface PostRepository {
     fun likeByAsync(id: Long, callback: PostCallback<Post>)
     fun removeByAsync(id: Long, callback: PostCallback<Unit>)
     fun saveByAsync(post: Post, callback: PostCallback<Post>)
-
+    fun getLocalPosts(): List<Post>
     interface PostCallback<T> {
         fun onSuccess(result: T)
         fun onError(e: Exception)

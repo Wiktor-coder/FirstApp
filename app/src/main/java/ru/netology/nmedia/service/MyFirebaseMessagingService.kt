@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
@@ -13,6 +15,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import ru.netology.nmedia.R
+import ru.netology.nmedia.activity.AppActivity
 import kotlin.random.Random
 
 private const val MAX_NOTIFICATION_CONTENT_LENGTH = 1000
@@ -59,16 +62,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         like.postAuthor)
                     showNotification(title)
 
-//                    val json = message.data[content] ?: return
-//                    val likeObj = gson.fromJson(json, Like::class.java)
-//                    handleLike(likeObj)
                 }
-//                    handleLike(
-//                    gson.fromJson(
-//                        message.data[content],
-//                        Like::class.java
-//                    )
-//                )
 
                 Action.SHARE -> {
                     val share = gson.fromJson(json, Share::class.java)
@@ -77,10 +71,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         share.userName
                     )
                     showNotification(title)
-
-//                    val json = message.data[content] ?: return
-//                    val sharePost = gson.fromJson(json, Share::class.java)
-//                    handleShare(sharePost)
                 }
 
                 Action.NEW_POST -> {
@@ -92,10 +82,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         post.content
                     }
                     showNotification(title, trimmedContent)
-
-//                    val json = message.data[content] ?: return
-//                    val newPost = gson.fromJson(json, NewPost::class.java)
-//                    handleNewPost(newPost)
                 }
                 null -> {
                     Log.w("FCM", "Unknown action: $actionStr")
@@ -105,15 +91,28 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showNotification(title: String, text: String? = null) {
+        val intent = Intent(this, AppActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_stat_name)
             .setContentTitle(title)
+            .setContentIntent(pendingIntent) // Добавьте intent
+            .setAutoCancel(true) // Закрывать при клике
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
         if (!text.isNullOrBlank()) {
             builder
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
         }
+
         notify(builder.build())
     }
 

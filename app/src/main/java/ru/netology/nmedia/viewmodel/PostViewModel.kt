@@ -1,19 +1,23 @@
 package ru.netology.nmedia.viewmodel
 
+import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
+import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.SingleLiveEvent
 
-class PostViewModel : ViewModel() {
-    private val repository: PostRepository = PostRepositorySQLiteImpl()
+class PostViewModel(application: Application) : AndroidViewModel(application) {
+    private val dao = AppDb.getInstance(application).postDao
+    private val repository: PostRepository = PostRepositorySQLiteImpl(application.applicationContext, dao)
 
     private val _data = MutableLiveData<FeedModel>(FeedModel())
     val data: LiveData<FeedModel> = _data
@@ -29,8 +33,16 @@ class PostViewModel : ViewModel() {
         loadPost()
     }
 
-    fun loadPost() {
+    fun loadPost(useCache: Boolean = true) {
         _data.postValue(FeedModel(loading = true))
+
+        if (useCache) {
+            // Показываем кэшированные данные сразу
+            val cachedPosts = repository.getLocalPosts()
+            if (cachedPosts.isNotEmpty()) {
+                _data.postValue(FeedModel(posts = cachedPosts))
+            }
+        }
 
         repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
             override fun onSuccess(result: List<Post>) {
@@ -168,29 +180,6 @@ class PostViewModel : ViewModel() {
             }
         }
     }
-//    fun save(newContent: String) {
-//        edited.value?.let { post ->
-//            if (post.content != newContent) {
-//                thread {
-//                    try {
-//                        val savedPost = repository.save(post.copy(content = newContent))
-//                        // Обновляем пост в списке
-//                        val currentPosts = _data.value?.posts.orEmpty()
-//                        val updatedPosts = currentPosts.map {
-//                            if (it.id == savedPost.id) savedPost else it
-//                        }
-//                        _data.postValue(FeedModel(posts = updatedPosts))
-//                        _edited.postValue(null)
-//                    } catch (e: IOException) {
-//                        e.printStackTrace()
-//                        _data.postValue(FeedModel(error = true))
-//                    }
-//                }
-//            } else {
-//                cancelEdited()
-//            }
-//        }
-//    }
 
     fun cancelEdited() {
         _edited.postValue(null)
@@ -202,6 +191,7 @@ class PostViewModel : ViewModel() {
             val newPost = Post(
                 id = 0L,
                 author = "My Post",
+                authorAvatar = "No Name",
                 published = System.currentTimeMillis(),
                 content = content.trim(),
                 likeCount = 0,
