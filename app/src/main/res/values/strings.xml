@@ -28,5 +28,10 @@
     <string name="retry_loading">retry loading</string>
     <string name="error_loading">error loading</string>
     <string name="refresh">menu_refresh</string>
+    <string name="error_network">No internet connection</string>
+    <string name="error_server">Error on the server</string>
+    <string name="error_timeout">Waiting time exceeded</string>
+    <string name="retry_network">Check the connection</string>
+    <string name="retry_later">Repeat later</string>
 
 </resources>

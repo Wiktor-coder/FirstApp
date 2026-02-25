@@ -7,12 +7,16 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
+import retrofit2.HttpException
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.model.ErrorType
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.SingleLiveEvent
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDb.getInstance(application).postDao
@@ -26,32 +30,89 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     val edited: LiveData<Post?> = _edited
     val isEditing: LiveData<Boolean> = _edited.map { it != null }
 
-    private val _postCreated = SingleLiveEvent<Unit>()
-    val postCreated: LiveData<Unit> = _postCreated
+    private val _postCreated = SingleLiveEvent<Result<Unit>>()
+    val postCreated: LiveData<Result<Unit>> = _postCreated
+
+    val _postError = SingleLiveEvent<String>()
+    val postError: LiveData<String> = _postError
+
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
 
     init {
         loadPost()
     }
 
     fun loadPost(useCache: Boolean = true) {
-        _data.postValue(FeedModel(loading = true))
+//        _data.postValue(FeedModel(loading = true))
+        _data.value = FeedModel(loading = true, posts = _data.value?.posts ?: emptyList())
 
+//        if (useCache) {
+//            // Показываем кэшированные данные сразу
+//            val cachedPosts = repository.getLocalPosts()
+//            if (cachedPosts.isNotEmpty()) {
+//                _data.postValue(FeedModel(posts = cachedPosts))
+//            }
+//        }
         if (useCache) {
-            // Показываем кэшированные данные сразу
             val cachedPosts = repository.getLocalPosts()
             if (cachedPosts.isNotEmpty()) {
-                _data.postValue(FeedModel(posts = cachedPosts))
+                // Показываем кэш, но оставляем loading=true для фоновой загрузки
+                _data.value = FeedModel(
+                    posts = cachedPosts,
+                    loading = true  // показываем, что идет обновление
+                )
             }
         }
 
         repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
             override fun onSuccess(result: List<Post>) {
-                _data.value = FeedModel(posts = result, empty = result.isEmpty())
+                _data.value = FeedModel(
+                    posts = result,
+                    empty = result.isEmpty(),
+                    loading = false
+                )
+                _error.value = null
             }
 
             override fun onError(e: Throwable) {
                 e.printStackTrace()
-                _data.value = FeedModel(error = true)
+                val errorType = when (e) {
+                    is UnknownHostException -> ErrorType.NETWORK
+                    is SocketTimeoutException -> ErrorType.TIMEOUT
+                    is HttpException -> {
+                        when (e.code()) {
+                            in 400..499 -> ErrorType.CLIENT
+                            in 500..599 -> ErrorType.SERVER
+                            else -> ErrorType.UNKNOWN
+                        }
+                    }
+
+                    else -> ErrorType.UNKNOWN
+                }
+                // Формируем сообщение для пользователя
+                val errorMessage = when (errorType) {
+                    ErrorType.NETWORK -> "Нет подключения к интернету"
+                    ErrorType.TIMEOUT -> "Превышено время ожидания"
+                    ErrorType.SERVER -> "Ошибка на сервере. Попробуйте позже"
+                    ErrorType.CLIENT -> "Ошибка запроса"
+                    ErrorType.UNKNOWN -> "Неизвестная ошибка: ${e.message}"
+                }
+
+                _error.value = errorMessage
+
+                // Важно: при ошибке показываем кэшированные данные (если они есть)
+                val currentPosts = _data.value?.posts ?: emptyList()
+                _data.value = FeedModel(
+                    posts = currentPosts,  // Сохраняем старые посты
+                    error = true,
+                    errorType = errorType,
+                    loading = false,
+                    empty = currentPosts.isEmpty()  // Пусто только если нет ни кэша, ни новых
+                )
+
+                //_error.postValue(e.message ?: "Неизвестная ошибка")
+//                _data.value = FeedModel(error = true, errorType = errorType)
             }
         })
     }
@@ -76,7 +137,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         repository.likeByAsync(id, object : PostRepository.PostCallback<Post> {
 
 
-                        override fun onSuccess(result: Post) {
+            override fun onSuccess(result: Post) {
                 // Можно по необходимости обновит конкретный пост
                 val updatedPost = _data.value?.posts?.map {
                     if (it.id == result.id) result else it
@@ -86,23 +147,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
             override fun onError(e: Throwable) {
                 e.printStackTrace()
+                _error.postValue(errorHandler(e))
                 // В случае ошибки откатываем изменения
                 _data.postValue(FeedModel(posts = currentPosts))
                 _data.postValue(FeedModel(error = true))
             }
 
         })
-//        thread {
-//            try {
-//                repository.likeById(id)
-//                // Можно ничего не делать, если сервер ответил успешно
-//            } catch (e: IOException) {
-//                e.printStackTrace()
-//                // В случае ошибки - откатываем изменения
-//                _data.postValue(FeedModel(posts = currentPosts))
-//                _data.postValue(FeedModel(error = true))
-//            }
-//        }
     }
 
 //    fun shareById(id: Long) {
@@ -136,22 +187,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
             override fun onError(e: Throwable) {
                 e.printStackTrace()
+                _error.postValue(errorHandler(e))
                 _data.postValue(FeedModel(error = true))
 
             }
         })
-//        thread {
-//            try {
-//                repository.removeById(id)
-//                // Удаляем пост из текущего списка
-//                val currentPosts = _data.value?.posts.orEmpty()
-//                val updatedPosts = currentPosts.filter { it.id != id }
-//                _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
-//            } catch (e: IOException) {
-//                e.printStackTrace()
-//                _data.postValue(FeedModel(error = true))
-//            }
-//        }
     }
 
     fun edit(post: Post) {
@@ -176,7 +216,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
                         override fun onError(e: Throwable) {
                             e.printStackTrace()
-                            _data.postValue(FeedModel(error = true))
+                            _postError.postValue(errorHandler(e))
+//                            _error.postValue(errorHandler(e))
+//                            _data.postValue(FeedModel(error = true))
                         }
 
                     })
@@ -208,30 +250,38 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     val currentPosts = _data.value?.posts.orEmpty()
                     val updatedPosts = listOf(result) + currentPosts
                     _data.postValue(FeedModel(posts = updatedPosts))
-                    _postCreated.postValue(Unit)
+                    _postCreated.postValue(Result.success(Unit))
                 }
 
                 override fun onError(e: Throwable) {
                     e.printStackTrace()
-                    _data.postValue(FeedModel(error = true))
+                    _postError.postValue(errorHandler(e))
+//                    _error.postValue(errorHandler(e))
+//                    _data.postValue(FeedModel(error = true))
+
                 }
             })
-//            thread {
-//                try {
-//                    val savedPost = repository.save(newPost)
-//                    // Добавляем новый пост в начало списка
-//                    val currentPosts = _data.value?.posts.orEmpty()
-//                    val updatedPosts = listOf(savedPost) + currentPosts
-//                    _data.postValue(FeedModel(posts = updatedPosts))
-//                    _postCreated.postValue(Unit)
-//                } catch (e: IOException) {
-//                    e.printStackTrace()
-//                    _data.postValue(FeedModel(error = true))
-//                }
-//            }
+//
         }
     }
 
     fun hasVideo(post: Post): Boolean = !post.video.isNullOrBlank()
     fun getVideoUrl(post: Post): String? = post.video?.trim()
+}
+
+private fun errorHandler(e: Throwable): String {
+    val errorMessage = when (e) {
+        is UnknownHostException -> "Нет подключения к интернету"
+        is SocketTimeoutException -> "Превышено время ожидания"
+        is HttpException -> {
+            when (e.code()) {
+                404 -> "Пост не найден"
+                500 -> "Ошибка сервера"
+                else -> "Ошибка ${e.code()}"
+            }
+        }
+
+        else -> "Неизвестная ошибка: ${e.message}"
+    }
+    return errorMessage
 }

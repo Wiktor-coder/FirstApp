@@ -10,6 +10,7 @@ import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.databinding.FragmentNewPostBinding
 import ru.netology.nmedia.utils.DraftRepository
 import ru.netology.nmedia.utils.StringArg
@@ -44,6 +45,24 @@ class NewPostFragment : Fragment() {
                 binding.edit.setSelection(sharedText.length)
                 DraftRepository.clearDraft(context)
             }
+        }
+
+        viewModel.postCreated.observe(viewLifecycleOwner) { result ->
+            if (result.isSuccess) {
+                DraftRepository.clearDraft(requireContext())
+                findNavController().navigateUp()
+            }
+
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMassage ->
+            Snackbar.make(
+                binding.root,
+                errorMassage ?: "Error",
+                Snackbar.LENGTH_LONG
+            )
+                .setAction("Ok") { }
+                .show()
         }
 
         binding.ok.setOnClickListener {

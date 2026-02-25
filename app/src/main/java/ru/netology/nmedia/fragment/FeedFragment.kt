@@ -13,12 +13,15 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.viewmodel.PostViewModel
 import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostListener
 import ru.netology.nmedia.databinding.FragmentFeedBinding
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.model.ErrorType
+import ru.netology.nmedia.model.ErrorType.*
 
 
 class FeedFragment : Fragment() {
@@ -26,6 +29,13 @@ class FeedFragment : Fragment() {
     private val viewModel: PostViewModel by activityViewModels()
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
+
+    private fun showErrorSnackbar(message: String, action: () -> Unit) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
+            .setAction("Повторить") { action() }
+            .setActionTextColor(resources.getColor(R.color.purple_500, null))
+            .show()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -103,16 +113,46 @@ class FeedFragment : Fragment() {
         viewModel.data.observe(viewLifecycleOwner) { state ->
             adapter.submitList(state.posts)
             // Управление видимостью элементов
-            binding.progress.isVisible = state.loading
+            binding.progress.isVisible = state.loading && state.posts.isEmpty()
             binding.errorGroup.isVisible = state.error
             binding.emptyText.isVisible = state.empty
 
+            if (state.error && state.posts.isEmpty()) {
+                binding.errorGroup.isVisible = true
+            } else {
+                binding.errorGroup.isVisible = false
+            }
+
+            if (state.error) {
+                val errorMessage = when (state.errorType) {
+                    NETWORK -> "Нет подключения к интернету"
+                    TIMEOUT -> "Превышено время ожидания"
+                    SERVER -> "Ошибка на сервере"
+                    CLIENT -> "Ошибка запроса"
+                    UNKNOWN -> "Неизвестная ошибка"
+                }
+                showErrorSnackbar(errorMessage) {
+                    viewModel.loadPost()
+                } // Теперь передаем String
+            }
+
             //ВАЖНО: скрываем индикатор SwipeRefreshLayout, когда загрузка закончена
             if (!state.loading) {
-                binding.swiperefresh.post {
-                    binding.swiperefresh.isRefreshing = false
-                }
+                binding.swiperefresh.isRefreshing = false
+//                binding.swiperefresh.post {
+//                    binding.swiperefresh.isRefreshing = false
+//                }
 
+            }
+        }
+
+        // Отдельно наблюдаем за ошибками постов (они не должны влиять на ленту)
+        viewModel.postError.observe(viewLifecycleOwner) { errorMessage ->
+            // Показываем в текущем фрагменте, если он активен
+            if (this.isVisible) {
+                Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG)
+                    .setAction("ОК") { }
+                    .show()
             }
         }
 

@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.databinding.FragmentEditPostBinding
 import ru.netology.nmedia.viewmodel.PostViewModel
 import kotlin.getValue
@@ -29,29 +30,6 @@ class EditPostFragment : Fragment() {
             return binding.root
         }
 
-        // Подписываемся на список постов и ищем нужный
-//        viewModel.get().observe(viewLifecycleOwner) { posts ->
-//            val postToEdit = posts.find { it.id == postId }
-//            if (postToEdit != null) {
-//                viewModel.edit(postToEdit) // устанавливаем редактируемый пост
-//                binding.edit.setText(postToEdit.content)
-//                binding.edit.setSelection(binding.edit.text.length)
-//            } else {
-//                //Пост не найден — возвращаемся
-//                findNavController().navigateUp()
-//            }
-//        }
-        // НЕТ .observe() — просто вызов функции
-//        val posts = viewModel.get() // List<Post>
-//        val postToEdit = posts.find { it.id == postId }
-//        if (postToEdit != null) {
-//            viewModel.edit(postToEdit)
-//            binding.edit.setText(postToEdit.content)
-//            binding.edit.setSelection(binding.edit.text.length)
-//        } else {
-//            findNavController().navigateUp()
-//        }
-
         // Наблюдаем за списком постов из LiveData
         viewModel.data.observe(viewLifecycleOwner) { feedModel ->
             val postToEdit = feedModel.posts.find { it.id == postId }
@@ -63,6 +41,25 @@ class EditPostFragment : Fragment() {
                 // Пост не найден — возвращаемся
                 findNavController().navigateUp()
             }
+        }
+
+        viewModel.postError.observe(viewLifecycleOwner) { errorMessage ->
+            Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG)
+                .setAction("Ok") {}
+                .show()
+        }
+//        viewModel.postCreated.observe(viewLifecycleOwner) {
+//            findNavController().navigateUp()
+//        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMassage ->
+            Snackbar.make(
+                binding.root,
+                errorMassage ?: "Error",
+                Snackbar.LENGTH_LONG
+            )
+                .setAction("OK") {}
+                .show()
         }
 
         binding.ok.setOnClickListener {

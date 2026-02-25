@@ -15,7 +15,7 @@
     <string name="edit">редактировать</string>
     <string name="chooser_share_post">Поделиться</string>
     <string name="error_empty_content">Содержимое не может быть пустым</string>
-    <string name="ok">ok</string>
+    <string name="ok">Хорошо</string>
     <string name="post_save">post_save</string>
     <string name="close_edit">close_edit</string>
     <string name="play_video" >Запустить видео</string>
@@ -26,7 +26,12 @@
     <string name="channel_remote_description">Уведомление с удалённго сервера</string>
     <string name="notification_user_shared">%1$s поделился постом</string>
     <string name="empty_post">Пустой пост</string>
-    <string name="retry_loading">retry loading</string>
-    <string name="error_loading">error loading</string>
-    <string name="refresh">menu_refresh</string>
+    <string name="refresh">Обновить</string>
+    <string name="error_network">Нет подключения к интернету</string>
+    <string name="error_server">Ошибка на сервере</string>
+    <string name="error_timeout">Превышено время ожидания</string>
+    <string name="error_loading">Не удалось загрузить данные</string>
+    <string name="retry_network">Проверить подключение</string>
+    <string name="retry_later">Повторить позже</string>
+    <string name="retry_loading">Повторить</string>
 </resources>
