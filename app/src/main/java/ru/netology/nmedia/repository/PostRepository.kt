@@ -5,23 +5,23 @@ import ru.netology.nmedia.adapter.PostDiffItemCallback
 import ru.netology.nmedia.dto.Post
 
 interface PostRepository {
+    fun getLocalPosts(): List<Post>
+    fun getAllAsync(callback: PostCallback<List<Post>>)
     fun get(): List<Post> //получить список
 
-    fun likeById(id: Long): Post //лайк
+    fun likeByAsync(id: Long, callback: PostCallback<Post>)
+    fun likeById(id: Long): Post? //лайк
 
 //    fun shareById(id: Long) //поделится
 
+    fun removeByAsync(id: Long, callback: PostCallback<Unit>)
     fun removeById(id: Long) //удаление
 
-    fun save(post: Post): Post //редактирование, создоние нового поста
-
-    fun getAllAsync(callback: PostCallback<List<Post>>)
-    fun likeByAsync(id: Long, callback: PostCallback<Post>)
-    fun removeByAsync(id: Long, callback: PostCallback<Unit>)
     fun saveByAsync(post: Post, callback: PostCallback<Post>)
-    fun getLocalPosts(): List<Post>
+    fun save(post: Post): Post? //редактирование, создоние нового поста
+
     interface PostCallback<T> {
         fun onSuccess(result: T)
-        fun onError(e: Exception)
+        fun onError(e: Throwable)
     }
 }

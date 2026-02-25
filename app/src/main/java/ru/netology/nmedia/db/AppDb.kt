@@ -29,7 +29,7 @@ abstract class AppDb: RoomDatabase() {
                 AppDb::class.java,
                 "app.db")
                 .allowMainThreadQueries() // доступ запросов с главного потока
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
 
 //        private fun buildDatabase(context: Context, DDLs: Array<String>) = DbHelper(

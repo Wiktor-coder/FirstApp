@@ -27,6 +27,7 @@ android {
 
     buildFeatures { //для создания binding
         viewBinding = true
+        buildConfig = true // чтобы появился надо собрать проект
     }
 
     buildTypes {
@@ -37,9 +38,11 @@ android {
                 "proguard-rules.pro"
             )
             manifestPlaceholders["usesCleartextTraffic"] = false
+            buildConfigField("String", "BASE_URL", "\"http://netology.ru\"")
         }
         debug {
             manifestPlaceholders["usesCleartextTraffic"] = true
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:9999\"")
         }
     }
     compileOptions {
@@ -71,6 +74,9 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.glide.v4151)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+    implementation(libs.cronet.embedded)
     ksp(libs.compiler)
     implementation(libs.androidx.cardview)
     ksp(libs.androidx.room.compiler)

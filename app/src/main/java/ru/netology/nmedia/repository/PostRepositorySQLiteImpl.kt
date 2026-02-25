@@ -2,22 +2,14 @@ package ru.netology.nmedia.repository
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.NetworkCapabilities
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.util.Log
-import java.util.concurrent.TimeUnit
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import okio.IOException
+import retrofit2.*
+import ru.netology.nmedia.BuildConfig
+import ru.netology.nmedia.api.PostApi
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Attachment
@@ -30,25 +22,23 @@ class PostRepositorySQLiteImpl(
     private val dao: PostDao = AppDb.getInstance(context).postDao
 ) : PostRepository {
     // для получения списка
-    private val postListType = object : TypeToken<List<Post>>() {}.type
+//    private val postListType = object : TypeToken<List<Post>>() {}.type
 
-    companion object {
-        const val BASE_URL = "http://10.0.2.2:9999"
+//    companion object {
+//        val jsonType = "application/json".toMediaType()
+//    }
 
-        val jsonType = "application/json".toMediaType()
-    }
-
-    private val gson = Gson()
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)  // Добавьте readTimeout
-        .writeTimeout(30, TimeUnit.SECONDS) // Добавьте writeTimeout
-        .build()
+//    private val gson = Gson()
+//    private val client = OkHttpClient.Builder()
+//        .connectTimeout(30, TimeUnit.SECONDS)
+//        .readTimeout(30, TimeUnit.SECONDS)  // Добавьте readTimeout
+//        .writeTimeout(30, TimeUnit.SECONDS) // Добавьте writeTimeout
+//        .build()
 
     // Вспомогательная функция для получения полного URL аватарки
     fun getAvatarUrl(avatarPath: String?): String? {
         return if (!avatarPath.isNullOrBlank()) {
-            "${BASE_URL}/avatars/${avatarPath}"
+            "${BuildConfig.BASE_URL}/avatars/${avatarPath}"
         } else null
     }
 
@@ -59,9 +49,9 @@ class PostRepositorySQLiteImpl(
     // Вспомогательная функция для получения URL вложения
     fun getAttachmentUrl(attachment: Attachment?): String? {
         val url = when(attachment?.type) {
-            AttachmentType.IMAGE -> "${BASE_URL}/images/${attachment.url}"
-            AttachmentType.VIDEO -> "${BASE_URL}/video/${attachment.url}"
-            AttachmentType.AUDIO -> "${BASE_URL}/audio/${attachment.url}"
+            AttachmentType.IMAGE -> "${BuildConfig.BASE_URL}/images/${attachment.url}"
+            AttachmentType.VIDEO -> "${BuildConfig.BASE_URL}/video/${attachment.url}"
+            AttachmentType.AUDIO -> "${BuildConfig.BASE_URL}/audio/${attachment.url}"
             null -> null
         }
         Log.d("ATTACHMENT_DEBUG", "getAttachmentUrl: type=${attachment?.type}, input=${attachment?.url}, output=$url")
@@ -75,43 +65,75 @@ class PostRepositorySQLiteImpl(
             return
         }
 
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts")
-            .build()
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts")
+//            .build()
 
-        client.newCall(request)
-            .enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    callback.onError(e)
-                }
+//        client.newCall(request)
+        PostApi.service.getAll()
+            .enqueue(object : Callback<List<Post>> {
+//                override fun onFailure(call: Call, e: IOException) {
+//                    callback.onError(e)
+//                }
+//
+//                override fun onResponse(call: Call, response: Response) {
+//                    try {
+//                        if (!response.isSuccessful) {
+//                            callback.onError(IOException("Неожиданный код $response"))
+//                            return
+//                        }
+//                        val body = response.body?.string() ?: throw IOException("Пустой ответ")
+//
+//                        // Логируем весь ответ для отладки
+//                        Log.d("ATTACHMENT_DEBUG", "Server response: $body")
+//
+//                        val posts = gson.fromJson<List<Post>>(body, postListType)
+//
+//                        posts.forEach { post ->
+//                            Log.d("ATTACHMENT_DEBUG",
+//                                "Post ${post.id}: attachment=${post.attachment?.url}, type=${post.attachment?.type}")
+//                        }
+//
+//                        // Сохраняем в БД через saveAll
+//                        val postEntities = posts.map { PostEntity.fromPost(it) }
+//                        dao.saveAll(postEntities)
+//                        callback.onSuccess(posts)
+//                    } catch (e: Exception) {
+//                        callback.onError(e)
+//                    } finally {
+//                        response.close()
+//                    }
+//                }
 
-                override fun onResponse(call: Call, response: Response) {
-                    try {
-                        if (!response.isSuccessful) {
-                            callback.onError(IOException("Неожиданный код $response"))
-                            return
-                        }
-                        val body = response.body?.string() ?: throw IOException("Пустой ответ")
+                override fun onResponse(
+                    call: Call<List<Post>?>,
+                    response: Response<List<Post>?>
+                ) {
+                    if (response.isSuccessful) {
+                        val posts = response.body() ?: emptyList()
 
-                        // Логируем весь ответ для отладки
-                        Log.d("ATTACHMENT_DEBUG", "Server response: $body")
+                        // Логируем для отладки
+                        Log.d("API_RESPONSE", "Posts response: $posts")
 
-                        val posts = gson.fromJson<List<Post>>(body, postListType)
-
-                        posts.forEach { post ->
-                            Log.d("ATTACHMENT_DEBUG",
-                                "Post ${post.id}: attachment=${post.attachment?.url}, type=${post.attachment?.type}")
-                        }
-
-                        // Сохраняем в БД через saveAll
+                        // Сохраняем в БД
                         val postEntities = posts.map { PostEntity.fromPost(it) }
                         dao.saveAll(postEntities)
+
                         callback.onSuccess(posts)
-                    } catch (e: Exception) {
-                        callback.onError(e)
-                    } finally {
-                        response.close()
+//                        callback.onSuccess(response.body().orEmpty())
+                    } else {
+                        val error = response.errorBody()?.string() ?: "Unknown error"
+                        callback.onError(IOException("Неожиданный код ${response.code()}: $error"))
+
+//                        callback.onError(RuntimeException(response.errorBody()?.string().orEmpty()))
                     }
+                }
+
+                override fun onFailure(
+                    call: Call<List<Post>>,
+                    t: Throwable
+                ) {
+                    callback.onError(t)
                 }
             })
     }
@@ -141,68 +163,127 @@ class PostRepositorySQLiteImpl(
     }
 
     override fun get(): List<Post> {
-        // создаём запрос
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts")
-            .build()
-
-        return client.newCall(request)
-            .execute()
-            .use { response ->
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
-                val body = response.body?.string() ?: throw IOException("Empty response body")
-                val listType = object : TypeToken<List<Post>>() {}.type
-                gson.fromJson(body, listType)
+        return try {
+            val response= PostApi.service.getAll().execute()
+            if (response.isSuccessful){
+                response.body() ?: emptyList()
+            }else{
+                emptyList()
             }
+        }catch (t: Throwable) {
+            t.printStackTrace()
+            emptyList()
+        }
+
+        // создаём запрос
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts")
+//            .build()
+
+//        return PostApi // client.newCall(request)
+//            .service
+//            .getAll()
+//            .execute()
+//            .body()
+//            .orEmpty()
+
+//            .use { response ->
+//                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+//                val body = response.body?.string() ?: throw IOException("Empty response body")
+//                val listType = object : TypeToken<List<Post>>() {}.type
+//                gson.fromJson(body, listType)
+//            }
     }
 
     override fun likeByAsync(id: Long, callback: PostRepository.PostCallback<Post>) {
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts/$id/likes")
-            .post(RequestBody.EMPTY)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                callback.onError(e)
+        PostApi.service.likeById(id).enqueue(object : Callback<Post> {
+            override fun onResponse(
+                call: Call<Post?>,
+                response: Response<Post?>
+            ) {
+                if (response.isSuccessful){
+                    val post = response.body()
+                    if (post != null) {
+                        dao.save(PostEntity.fromPost(post))
+                        callback.onSuccess(post)
+                    }else{
+                        callback.onError(IOException("Empty response body"))
+                    }
+                }else{
+                    val error = response.errorBody()?.string() ?: "Unknown error"
+                    callback.onError(IOException("Неожиданный код ${response.code()}: $error"))
+                }
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    if (!response.isSuccessful) {
-                        callback.onError(IOException("Неожиданный код $response"))
-                        return
-                    }
-                    val body = response.body?.string() ?: throw IOException("Пустой ответ")
-                    val post = gson.fromJson(body, Post::class.java)
-                    dao.save(PostEntity.fromPost(post))
-                    callback.onSuccess(post)
-                } catch (e: Exception) {
-                    callback.onError(e)
-                } finally {
-                    response.close()
-                }
+            override fun onFailure(
+                call: Call<Post?>,
+                t: Throwable
+            ) {
+                callback.onError(t)
             }
 
         })
+
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts/$id/likes")
+//            .post(RequestBody.EMPTY)
+//            .build()
+//
+//        client.newCall(request).enqueue(object : Callback {
+//            override fun onFailure(call: Call, e: IOException) {
+//                callback.onError(e)
+//            }
+//
+//            override fun onResponse(call: Call, response: Response) {
+//                try {
+//                    if (!response.isSuccessful) {
+//                        callback.onError(IOException("Неожиданный код $response"))
+//                        return
+//                    }
+//                    val body = response.body?.string() ?: throw IOException("Пустой ответ")
+//                    val post = gson.fromJson(body, Post::class.java)
+//                    dao.save(PostEntity.fromPost(post))
+//                    callback.onSuccess(post)
+//                } catch (e: Exception) {
+//                    callback.onError(e)
+//                } finally {
+//                    response.close()
+//                }
+//            }
+//
+//        })
     }
 
-    override fun likeById(id: Long): Post {
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts/$id/likes")
-            .post(RequestBody.EMPTY)
-            .build()
-
-        //Используем пост с сервера для частичного обновления
-        return client.newCall(request)
-            .execute()
-            .use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
-                }
-                val body = response.body?.string() ?: throw IOException("Empty response body")
-                gson.fromJson(body, Post::class.java)
+    override fun likeById(id: Long): Post? {
+        return try {
+            val response= PostApi.service.likeById(id).execute()
+            if (response.isSuccessful) {
+                val post = response.body()
+                post?.let { dao.save(PostEntity.fromPost(it)) }
+                post
+            }else{
+                null
             }
+        }catch (t: Throwable) {
+            t.printStackTrace()
+            null
+        }
+
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts/$id/likes")
+//            .post(RequestBody.EMPTY)
+//            .build()
+//
+//        //Используем пост с сервера для частичного обновления
+//        return client.newCall(request)
+//            .execute()
+//            .use { response ->
+//                if (!response.isSuccessful) {
+//                    throw IOException("Unexpected code $response")
+//                }
+//                val body = response.body?.string() ?: throw IOException("Empty response body")
+//                gson.fromJson(body, Post::class.java)
+//            }
     }
 
 //    override  fun shareById(id: Long) {
@@ -221,96 +302,167 @@ class PostRepositorySQLiteImpl(
 //    }
 
     override fun removeByAsync(id: Long, callback: PostRepository.PostCallback<Unit>) {
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts/$id")
-            .delete()
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                callback.onError(e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    if (!response.isSuccessful) {
-                        callback.onError(IOException("Неожиданный код $response"))
-                        return
-                    }
+        PostApi.service.delete(id).enqueue(object : Callback<Unit> {
+            override fun onResponse(
+                call: Call<Unit?>,
+                response: Response<Unit?>
+            ) {
+                if (response.isSuccessful) {
                     dao.removeById(id)
                     callback.onSuccess(Unit)
-                } catch (e: Exception) {
-                    callback.onError(e)
-                } finally {
-                    response.close()
+                }else{
+                    val error = response.errorBody()?.string() ?: "Unknown error"
+                    callback.onError(IOException("Неожиданный код ${response.code()}: $error"))
                 }
             }
 
+            override fun onFailure(call: Call<Unit?>, t: Throwable) {
+                callback.onError(t)
+            }
+
         })
+
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts/$id")
+//            .delete()
+//            .build()
+//
+//        client.newCall(request).enqueue(object : Callback {
+//            override fun onFailure(call: Call, e: IOException) {
+//                callback.onError(e)
+//            }
+//
+//            override fun onResponse(call: Call, response: Response) {
+//                try {
+//                    if (!response.isSuccessful) {
+//                        callback.onError(IOException("Неожиданный код $response"))
+//                        return
+//                    }
+//                    dao.removeById(id)
+//                    callback.onSuccess(Unit)
+//                } catch (e: Exception) {
+//                    callback.onError(e)
+//                } finally {
+//                    response.close()
+//                }
+//            }
+//
+//        })
     }
 
     override fun removeById(id: Long) {
-        // создаём запрос
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts/$id")
-            .delete()
-            .build()
-
-        client.newCall(request)
-            .execute()
-            .use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
-                }
+        try {
+            val response = PostApi.service.delete(id).execute()
+            if (response.isSuccessful){
+                dao.removeById(id)
             }
+        }catch (t: Throwable) {
+            t.printStackTrace()
+        }
+
+        // создаём запрос
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts/$id")
+//            .delete()
+//            .build()
+
+         //client.newCall(request)
+//            .execute()
+
+//            .use { response ->
+//                if (!response.isSuccessful) {
+//                    throw IOException("Unexpected code $response")
+//                }
+//            }
     }
 
     override fun saveByAsync(post: Post, callback: PostRepository.PostCallback<Post>) {
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts")
-            .post(gson.toJson(post).toRequestBody(jsonType))
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                callback.onError(e)
+        PostApi.service.savePost(post).enqueue(object : Callback<Post> {
+            override fun onResponse(
+                call: Call<Post?>,
+                response: Response<Post?>
+            ) {
+                if (response.isSuccessful) {
+                    val savePost = response.body()
+                    if (savePost != null) {
+                        dao.save(PostEntity.fromPost(savePost))
+                        callback.onSuccess(savePost)
+                    }else {
+                        callback.onError(IOException("Empty response body"))
+                    }
+                }else{
+                    val error = response.errorBody()?.string() ?: "Unknown error"
+                    callback.onError(IOException("Неожиданный код ${response.code()}: $error"))
+                }
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    if (!response.isSuccessful) {
-                        callback.onError(IOException("Неожиданный код $response"))
-                        return
-                    }
-                    val body = response.body?.string() ?: throw IOException("Пустой ответ")
-                    val savePost = gson.fromJson(body, Post::class.java)
-                    dao.save(PostEntity.fromPost(savePost))
-                    callback.onSuccess(savePost)
-                } catch (e: Exception) {
-                    callback.onError(e)
-                } finally {
-                    response.close()
-                }
+            override fun onFailure(
+                call: Call<Post?>,
+                t: Throwable
+            ) {
+                callback.onError(t)
             }
 
         })
+
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts")
+//            .post(gson.toJson(post).toRequestBody(jsonType))
+//            .build()
+
+//        client.newCall(request).enqueue(object : Callback {
+//            override fun onFailure(call: Call, e: IOException) {
+//                callback.onError(e)
+//            }
+//
+//            override fun onResponse(call: Call, response: Response) {
+//                try {
+//                    if (!response.isSuccessful) {
+//                        callback.onError(IOException("Неожиданный код $response"))
+//                        return
+//                    }
+//                    val body = response.body?.string() ?: throw IOException("Пустой ответ")
+//                    val savePost = gson.fromJson(body, Post::class.java)
+//                    dao.save(PostEntity.fromPost(savePost))
+//                    callback.onSuccess(savePost)
+//                } catch (e: Exception) {
+//                    callback.onError(e)
+//                } finally {
+//                    response.close()
+//                }
+//            }
+//
+//        })
     }
 
-    override fun save(post: Post): Post {
+    override fun save(post: Post): Post? {
         // создаём запрос
-        val request = Request.Builder()
-            .url("${BASE_URL}/api/slow/posts")
-            .post(gson.toJson(post).toRequestBody(jsonType))
-            .build()
-
-        return client.newCall(request)
-            .execute()
-            .use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
-                }
-                val body = response.body?.string() ?: throw IOException("Empty response body")
-                gson.fromJson(body, Post::class.java)
+//        val request = Request.Builder()
+//            .url("${BASE_URL}/api/slow/posts")
+//            .post(gson.toJson(post).toRequestBody(jsonType))
+//            .build()
+        return try {
+            val response = PostApi.service.savePost(post) //return client.newCall(request)
+                .execute()
+            if (response.isSuccessful) {
+                val savePost = response.body()
+                savePost?.let { dao.save(PostEntity.fromPost(it)) }
+            savePost
+            }else {
+                null
             }
+        }catch (t: Throwable) {
+            t.printStackTrace()
+            null
+        }
+
+
+//            .use { response ->
+//                if (!response.isSuccessful) {
+//                    throw IOException("Unexpected code $response")
+//                }
+//                val body = response.body?.string() ?: throw IOException("Empty response body")
+//                gson.fromJson(body, Post::class.java)
+//            }
     }
 }

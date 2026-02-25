@@ -6,7 +6,6 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Post
@@ -17,7 +16,8 @@ import ru.netology.nmedia.utils.SingleLiveEvent
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDb.getInstance(application).postDao
-    private val repository: PostRepository = PostRepositorySQLiteImpl(application.applicationContext, dao)
+    private val repository: PostRepository =
+        PostRepositorySQLiteImpl(application.applicationContext, dao)
 
     private val _data = MutableLiveData<FeedModel>(FeedModel())
     val data: LiveData<FeedModel> = _data
@@ -46,12 +46,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
         repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
             override fun onSuccess(result: List<Post>) {
-                _data.postValue(FeedModel(posts = result, empty = result.isEmpty()))
+                _data.value = FeedModel(posts = result, empty = result.isEmpty())
             }
 
-            override fun onError(e: Exception) {
+            override fun onError(e: Throwable) {
                 e.printStackTrace()
-                _data.postValue(FeedModel(error = true))
+                _data.value = FeedModel(error = true)
             }
         })
     }
@@ -74,7 +74,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
         // 2. Отправляем запрос на сервер
         repository.likeByAsync(id, object : PostRepository.PostCallback<Post> {
-            override fun onSuccess(result: Post) {
+
+
+                        override fun onSuccess(result: Post) {
                 // Можно по необходимости обновит конкретный пост
                 val updatedPost = _data.value?.posts?.map {
                     if (it.id == result.id) result else it
@@ -82,12 +84,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 updatedPost?.let { _data.postValue((FeedModel(posts = it))) }
             }
 
-            override fun onError(e: Exception) {
+            override fun onError(e: Throwable) {
                 e.printStackTrace()
                 // В случае ошибки откатываем изменения
                 _data.postValue(FeedModel(posts = currentPosts))
                 _data.postValue(FeedModel(error = true))
             }
+
         })
 //        thread {
 //            try {
@@ -131,7 +134,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
             }
 
-            override fun onError(e: Exception) {
+            override fun onError(e: Throwable) {
                 e.printStackTrace()
                 _data.postValue(FeedModel(error = true))
 
@@ -171,7 +174,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                             _edited.postValue(null)
                         }
 
-                        override fun onError(e: Exception) {
+                        override fun onError(e: Throwable) {
                             e.printStackTrace()
                             _data.postValue(FeedModel(error = true))
                         }
@@ -208,7 +211,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     _postCreated.postValue(Unit)
                 }
 
-                override fun onError(e: Exception) {
+                override fun onError(e: Throwable) {
                     e.printStackTrace()
                     _data.postValue(FeedModel(error = true))
                 }
