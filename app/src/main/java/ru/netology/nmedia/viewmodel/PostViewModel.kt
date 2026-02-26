@@ -248,7 +248,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         _edited.postValue(null)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+//    @RequiresApi(Build.VERSION_CODES.O)
     fun createPost(content: String) {
         if (content.isNotBlank()) {
             val newPost = Post(
