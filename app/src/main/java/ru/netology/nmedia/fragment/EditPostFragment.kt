@@ -43,9 +43,23 @@ class EditPostFragment : Fragment() {
             }
         }
 
+        // Наблюдаем за успешным сохранением
+        viewModel.postSuccess.observe(viewLifecycleOwner) {
+            findNavController().navigateUp()
+        }
+
         viewModel.postError.observe(viewLifecycleOwner) { errorMessage ->
-            Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG)
-                .setAction("Ok") {}
+            Snackbar.make(
+                binding.root,
+                errorMessage,
+                Snackbar.LENGTH_LONG
+            )
+                .setAnchorView(binding.ok)
+                .setAction("Ok") {
+                    // Разблокируем кнопку при ошибке
+                    binding.ok.isEnabled = true
+                    binding.progress.visibility = View.GONE
+                }
                 .show()
         }
 //        viewModel.postCreated.observe(viewLifecycleOwner) {
@@ -66,8 +80,12 @@ class EditPostFragment : Fragment() {
             val text = binding.edit.text.toString().trim()
             if (text.isNotEmpty()) {
                 viewModel.save(text) //редактирует существующий пост
+                binding.ok.isEnabled = false
+                binding.progress.visibility = View.VISIBLE
+
+            } else {
+                findNavController().navigateUp()
             }
-            findNavController().navigateUp()
         }
 
         binding.cancel.setOnClickListener {

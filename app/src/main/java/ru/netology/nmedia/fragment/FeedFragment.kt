@@ -30,11 +30,20 @@ class FeedFragment : Fragment() {
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
-    private fun showErrorSnackbar(message: String, action: () -> Unit) {
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
-            .setAction("Повторить") { action() }
-            .setActionTextColor(resources.getColor(R.color.purple_500, null))
-            .show()
+    private fun showErrorSnackbar(message: String, action: (() -> Unit)? = null) {
+        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
+
+        // Устанавливаем якорь на кнопку добавления поста
+        snackbar.setAnchorView(binding.add)
+
+        if (action != null) {
+            snackbar.setAction("Повторить") { action() }
+                .setActionTextColor(resources.getColor(R.color.purple_500, null))
+        } else {
+            snackbar.setAction("OK") { }
+        }
+
+        snackbar.show()
     }
 
     override fun onCreateView(
@@ -115,7 +124,7 @@ class FeedFragment : Fragment() {
             // Управление видимостью элементов
             binding.progress.isVisible = state.loading && state.posts.isEmpty()
             binding.errorGroup.isVisible = state.error
-            binding.emptyText.isVisible = state.empty
+            binding.emptyText.isVisible = state.empty && !state.loading
 
             if (state.error && state.posts.isEmpty()) {
                 binding.errorGroup.isVisible = true
@@ -150,7 +159,12 @@ class FeedFragment : Fragment() {
         viewModel.postError.observe(viewLifecycleOwner) { errorMessage ->
             // Показываем в текущем фрагменте, если он активен
             if (this.isVisible) {
-                Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG)
+                Snackbar.make(
+                    binding.root,
+                    errorMessage,
+                    Snackbar.LENGTH_LONG
+                )
+                    .setAnchorView(binding.add)
                     .setAction("ОК") { }
                     .show()
             }

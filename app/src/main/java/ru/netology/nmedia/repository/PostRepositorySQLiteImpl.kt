@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import ru.netology.nmedia.utils.Result
 import android.util.Log
 import okio.IOException
 import retrofit2.*
@@ -116,17 +117,17 @@ class PostRepositorySQLiteImpl(
         }
     }
 
-    override fun get(): List<Post> {
+    override fun get(): Result<List<Post>> {
         return try {
             val response = PostApi.service.getAll().execute()
             if (response.isSuccessful) {
-                response.body() ?: emptyList()
-            } else {
-                emptyList()
+                val post = response.body() ?: emptyList()
+                Result.Success(post)
+            }else{
+                Result.Error("Ошибка ${response.code()}")
             }
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            emptyList()
+        }catch (e: Exception) {
+            Result.Error(e.message ?: "Неизвестная ошибка", exception = e)
         }
     }
 
@@ -160,19 +161,86 @@ class PostRepositorySQLiteImpl(
         })
     }
 
-    override fun likeById(id: Long): Post? {
+    override fun unlikeByAsync(
+        id: Long,
+        callback: PostRepository.PostCallback<Post>
+    ) {
+        if (!isNetworkAvailable()) {
+            callback.onError(IOException("Нет подключения к интернету"))
+            return
+        }
+
+        PostApi.service.unLikeById(id).enqueue(object : Callback<Post> {
+            override fun onResponse(
+                call: Call<Post?>,
+                response: Response<Post?>
+            ) {
+                if (response.isSuccessful) {
+                    val post = response.body()
+                    if (post != null) {
+                        dao.save(PostEntity.fromPost(post))
+                        callback.onSuccess(post)
+                    }else{
+                        callback.onError(IOException("Пустой ответ от сервера"))
+                    }
+                }else{
+                    val error = response.errorBody()?.string() ?: "Неизвестная ошибка"
+                    callback.onError(IOException("Ошибка ${response.code()}: $error"))
+                }
+            }
+
+            override fun onFailure(
+                call: Call<Post?>,
+                t: Throwable
+            ) {
+                callback.onError(t as Exception)
+            }
+        })
+    }
+
+    override fun likeById(id: Long): Result<Post> {
         return try {
+            if (!isNetworkAvailable()) {
+                return Result.Error("Нет подключения к интернету")
+            }
+
             val response = PostApi.service.likeById(id).execute()
             if (response.isSuccessful) {
                 val post = response.body()
-                post?.let { dao.save(PostEntity.fromPost(it)) }
-                post
+                if (post != null) {
+                    dao.save(PostEntity.fromPost(post))
+                    Result.Success(post)
+                } else {
+                    Result.Error("Пустой ответ от сервера")
+                }
             } else {
-                null
+                Result.Error("Ошибка ${response.code()}: ${response.errorBody()?.string()}")
             }
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            null
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Неизвестная ошибка", exception = e)
+        }
+    }
+
+    override fun unlikeById(id: Long): Result<Post> {
+        return try {
+            if (!isNetworkAvailable()) {
+                return Result.Error("Нет подключения к интернету")
+            }
+
+            val response = PostApi.service.unLikeById(id).execute()
+            if (response.isSuccessful) {
+                val post = response.body()
+                if (post != null) {
+                    dao.save(PostEntity.fromPost(post))
+                    Result.Success(post)
+                }else{
+                    Result.Error("Пустой ответ от сервера")
+                }
+            }else{
+                Result.Error("Ошибка ${response.code()}: ${response.errorBody()?.string()}")
+            }
+        }catch (e: Exception) {
+            Result.Error(e.message ?: "Неизвестная ошибка", exception = e)
         }
     }
 
@@ -213,16 +281,22 @@ class PostRepositorySQLiteImpl(
         })
     }
 
-    override fun removeById(id: Long) {
-        try {
+    override fun removeById(id: Long): Result<Unit> {
+        return try {
+            if (!isNetworkAvailable()) {
+                return Result.Error("Нет подключения к интернету")
+            }
+
             val response = PostApi.service.delete(id).execute()
             if (response.isSuccessful) {
                 dao.removeById(id)
+                Result.Success(Unit)
+            } else {
+                Result.Error("Ошибка ${response.code()}")
             }
-        } catch (t: Throwable) {
-            t.printStackTrace()
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Неизвестная ошибка", exception = e)
         }
-
     }
 
     override fun saveByAsync(post: Post, callback: PostRepository.PostCallback<Post>) {
@@ -255,20 +329,26 @@ class PostRepositorySQLiteImpl(
         })
     }
 
-    override fun save(post: Post): Post? {
+    override fun save(post: Post): Result<Post> {
         return try {
-            val response = PostApi.service.savePost(post) //return client.newCall(request)
-                .execute()
-            if (response.isSuccessful) {
-                val savePost = response.body()
-                savePost?.let { dao.save(PostEntity.fromPost(it)) }
-                savePost
-            } else {
-                null
+            if (!isNetworkAvailable()) {
+                return Result.Error("Нет подключения к интернету")
             }
-        } catch (t: Throwable) {
-            t.printStackTrace()
-            null
+
+            val response = PostApi.service.savePost(post).execute()
+            if (response.isSuccessful) {
+                val savedPost = response.body()
+                if (savedPost != null) {
+                    dao.save(PostEntity.fromPost(savedPost))
+                    Result.Success(savedPost)
+                } else {
+                    Result.Error("Пустой ответ от сервера")
+                }
+            } else {
+                Result.Error("Ошибка ${response.code()}: ${response.errorBody()?.string()}")
+            }
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Неизвестная ошибка", exception = e)
         }
     }
 }

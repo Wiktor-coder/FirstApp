@@ -20,7 +20,7 @@ import kotlin.concurrent.thread
 
 class NewPostFragment : Fragment() {
 
-    @RequiresApi(Build.VERSION_CODES.O)
+//    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -55,23 +55,29 @@ class NewPostFragment : Fragment() {
 
         }
 
-        viewModel.error.observe(viewLifecycleOwner) { errorMassage ->
+        viewModel.postError.observe(viewLifecycleOwner) { errorMassage ->
             Snackbar.make(
                 binding.root,
                 errorMassage ?: "Error",
                 Snackbar.LENGTH_LONG
             )
-                .setAction("Ok") { }
+                .setAnchorView(binding.ok)
+                .setAction("Ok") {
+                    binding.ok.isEnabled = true
+                    binding.progress.visibility = View.GONE
+                }
                 .show()
         }
 
         binding.ok.setOnClickListener {
             val text = binding.edit.text.toString().trim()
             if (text.isNotEmpty()) {
+                binding.ok.isEnabled = false
+                binding.progress.visibility = View.VISIBLE // Показываем прогрес
                 // Создаем пост и сразу закрываем
                 viewModel.createPost(text)
-                DraftRepository.clearDraft(context)
-                findNavController().navigateUp() // Закрываем сразу, не ждем ответа
+//                DraftRepository.clearDraft(context)
+//                findNavController().navigateUp() // Закрываем сразу, не ждем ответа
             } else {
                 findNavController().navigateUp()
             }

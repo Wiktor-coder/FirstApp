@@ -39,6 +39,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val _postSuccess = SingleLiveEvent<Unit>()
+    val postSuccess: LiveData<Unit> = _postSuccess
+
     init {
         loadPost()
     }
@@ -75,13 +78,13 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _error.value = null
             }
 
-            override fun onError(e: Throwable) {
-                e.printStackTrace()
-                val errorType = when (e) {
+            override fun onError(error: Throwable) {
+                error.printStackTrace()
+                val errorType = when (error) {
                     is UnknownHostException -> ErrorType.NETWORK
                     is SocketTimeoutException -> ErrorType.TIMEOUT
                     is HttpException -> {
-                        when (e.code()) {
+                        when (error.code()) {
                             in 400..499 -> ErrorType.CLIENT
                             in 500..599 -> ErrorType.SERVER
                             else -> ErrorType.UNKNOWN
@@ -96,7 +99,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     ErrorType.TIMEOUT -> "Превышено время ожидания"
                     ErrorType.SERVER -> "Ошибка на сервере. Попробуйте позже"
                     ErrorType.CLIENT -> "Ошибка запроса"
-                    ErrorType.UNKNOWN -> "Неизвестная ошибка: ${e.message}"
+                    ErrorType.UNKNOWN -> "Неизвестная ошибка: ${error.message}"
                 }
 
                 _error.value = errorMessage
@@ -118,14 +121,20 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun likeById(id: Long) {
-        // 1. Сначала обновляем UI
         val currentPosts = _data.value?.posts.orEmpty()
+        val currentPost = currentPosts.find { it.id == id }
+
+        if (currentPost == null) return
+
+        // Определяем, ставим лайк или снимаем
+        val isLiking = !currentPost.likedByMe
+
+        // Оптимистичное обновление UI
         val updatedPosts = currentPosts.map { post ->
             if (post.id == id) {
-                val newLikedByMe = !post.likedByMe
                 post.copy(
-                    likedByMe = newLikedByMe,
-                    likeCount = if (newLikedByMe) post.likeCount + 1 else post.likeCount - 1
+                    likedByMe = isLiking,
+                    likeCount = if (isLiking) post.likeCount + 1 else post.likeCount - 1
                 )
             } else {
                 post
@@ -133,27 +142,36 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         }
         _data.value = FeedModel(posts = updatedPosts)
 
-        // 2. Отправляем запрос на сервер
-        repository.likeByAsync(id, object : PostRepository.PostCallback<Post> {
-
-
+        // Вызываем соответствующий метод API
+        val callback = object : PostRepository.PostCallback<Post> {
             override fun onSuccess(result: Post) {
-                // Можно по необходимости обновит конкретный пост
-                val updatedPost = _data.value?.posts?.map {
+                // Обновляем конкретный пост из ответа сервера
+                val finalPosts = _data.value?.posts?.map {
                     if (it.id == result.id) result else it
                 }
-                updatedPost?.let { _data.postValue((FeedModel(posts = it))) }
+                finalPosts?.let { _data.postValue(FeedModel(posts = it)) }
             }
 
-            override fun onError(e: Throwable) {
-                e.printStackTrace()
-                _error.postValue(errorHandler(e))
-                // В случае ошибки откатываем изменения
+            override fun onError(error: Throwable) {
+                error.printStackTrace()
+                // Откатываем изменения при ошибке
                 _data.postValue(FeedModel(posts = currentPosts))
-                _data.postValue(FeedModel(error = true))
-            }
 
-        })
+                // Показываем ошибку
+                val errorMessage = when (error) {
+                    is UnknownHostException -> "Нет интернета"
+                    is SocketTimeoutException -> "Таймаут"
+                    else -> "Не удалось ${if (isLiking) "поставить" else "снять"} лайк"
+                }
+                _postError.postValue(errorMessage)
+            }
+        }
+
+        if (isLiking) {
+            repository.likeByAsync(id, callback)
+        } else {
+            repository.unlikeByAsync(id, callback)
+        }
     }
 
 //    fun shareById(id: Long) {
@@ -185,9 +203,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
             }
 
-            override fun onError(e: Throwable) {
-                e.printStackTrace()
-                _error.postValue(errorHandler(e))
+            override fun onError(error: Throwable) {
+                error.printStackTrace()
+                _error.postValue(errorHandler(error))
                 _data.postValue(FeedModel(error = true))
 
             }
@@ -212,15 +230,15 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                             }
                             _data.postValue(FeedModel(posts = updatedPosts))
                             _edited.postValue(null)
+                            _postSuccess.postValue(Unit)
                         }
 
-                        override fun onError(e: Throwable) {
-                            e.printStackTrace()
-                            _postError.postValue(errorHandler(e))
+                        override fun onError(error: Throwable) {
+                            error.printStackTrace()
+                            _postError.postValue(errorHandler(error))
 //                            _error.postValue(errorHandler(e))
 //                            _data.postValue(FeedModel(error = true))
                         }
-
                     })
             }
         }
@@ -251,11 +269,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                     val updatedPosts = listOf(result) + currentPosts
                     _data.postValue(FeedModel(posts = updatedPosts))
                     _postCreated.postValue(Result.success(Unit))
+                    _postSuccess.postValue(Unit)
                 }
 
-                override fun onError(e: Throwable) {
-                    e.printStackTrace()
-                    _postError.postValue(errorHandler(e))
+                override fun onError(error: Throwable) {
+                    error.printStackTrace()
+                    _postError.postValue(errorHandler(error))
 //                    _error.postValue(errorHandler(e))
 //                    _data.postValue(FeedModel(error = true))
 
