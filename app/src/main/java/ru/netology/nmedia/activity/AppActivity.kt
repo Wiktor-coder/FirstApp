@@ -1,23 +1,22 @@
 package ru.netology.nmedia.activity
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.navigation.fragment.NavHostFragment
-import android.Manifest
 import com.google.android.material.snackbar.Snackbar
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.ActivityAppBinding
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
-
 
 class AppActivity : AppCompatActivity() {
 
@@ -32,38 +31,29 @@ class AppActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         val binding = ActivityAppBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        //setContentView(R.layout.activity_intent_handler)
-        ViewCompat.setOnApplyWindowInsetsListener(binding.navController) { v, insets ->
+
+        // Применяем отступы для корневого view, а не для navController
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.updatePadding(
+                left = systemBars.left,
+                top = systemBars.top,
+                right = systemBars.right,
+                bottom = systemBars.bottom
+            )
             insets
         }
 
+        // Запрос разрешения на уведомления (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Log.d("PERMISSION", "Checking notification permission...")
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                Log.d("PERMISSION", "Requesting notification permission...")
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                Log.d("PERMISSION", "Notification permission already granted")
-            }
-        }
-
-        // Запрашиваем разрешение на уведомления (только на Android 13+)
-        // Запрос делается после setContentView, но до обработки intent
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                this,
-                    Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-                ) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
@@ -77,24 +67,33 @@ class AppActivity : AppCompatActivity() {
                 return@let
             }
 
-            val text = it.getStringExtra(Intent.EXTRA_TEXT) //?: ""
+            val text = it.getStringExtra(Intent.EXTRA_TEXT)
+
             if (text.isNullOrBlank()) {
-                // Snackbar.LENGTH_INDEFINITE показывает сообщение пока пользователь не нажмёт окей
                 Snackbar.make(
                     binding.root,
                     R.string.error_empty_content,
                     Snackbar.LENGTH_INDEFINITE
                 )
-                    // resId показываем кнопку "ок" finish() завершает activity
                     .setAction(android.R.string.ok) { finish() }
                     .show()
+                return
             }
-            //findNavController(R.id.nav_controller)
-            binding.navController.getFragment<NavHostFragment>().navController
-                .navigate(
-                    R.id.action_feedFragment_to_newPostFragment2,
-                    Bundle().apply { textArg = text }
-                )
+
+            // Правильный способ получить NavController
+            val navHostFragment = supportFragmentManager
+                .findFragmentById(R.id.nav_controller) as NavHostFragment
+            val navController = navHostFragment.navController
+
+            // Навигация с аргументом
+            val bundle = Bundle().apply {
+                textArg = text
+            }
+
+            navController.navigate(
+                R.id.action_feedFragment_to_newPostFragment2,
+                bundle
+            )
         }
     }
 }

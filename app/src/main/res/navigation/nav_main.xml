@@ -19,6 +19,9 @@
         <action
             android:id="@id/action_feedFragment_to_singlePostFragment"
             app:destination="@id/singlePostFragment" />
+        <action
+            android:id="@+id/action_global_fullScreenImageFragment"
+            app:destination="@id/fullScreenImageFragment" />
 
     </fragment>
     <fragment
@@ -44,6 +47,17 @@
         <argument
             android:name="postId"
             app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fullScreenImageFragment"
+        android:name="ru.netology.nmedia.fragment.FullScreenImageFragment"
+        android:label="FullScreenImage"
+        tools:layout="@layout/fragment_full_screen_image">
+
+        <argument
+            android:name="imageUrl"
+            app:argType="string" />
     </fragment>
 
 </navigation>

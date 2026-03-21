@@ -5,6 +5,17 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -14,37 +25,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.FirstApp">
-<!--    кастыль usesCleartextTraffic ^      -->
-        <!--        <activity-->
-        <!--            android:name=".fragment.EditPostFragment"-->
-        <!--            android:exported="false" />-->
-        <!--        &lt;!&ndash; .NewPostActivity используется внутри приложения поэтому exported="false" &ndash;&gt;-->
-        <!--        <activity-->
-        <!--            android:name=".fragment.NewPostFragment"-->
-        <!--            android:exported="false" />-->
-        <!--        <activity-->
-        <!--            android:name=".fragment.FeedFragment"-->
-        <!--            android:exported="true">-->
+        android:theme="@style/Theme.FirstApp"
+        android:debuggable="true"
+        tools:ignore="HardcodedDebugMode">
 
-        <!--        </activity> &lt;!&ndash; прописываем intents в соответствии с входными данными &ndash;&gt;-->
         <activity
             android:name=".activity.AppActivity"
             android:exported="true">
+
+            <!-- Intent-filter для SEND (получение шары) -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-
                 <data android:mimeType="text/plain" />
             </intent-filter>
+
+            <!-- Intent-filter для MAIN (запуск) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
 
         <service
             android:name=".service.MyFirebaseMessagingService"

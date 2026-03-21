@@ -87,51 +87,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!--    <EditText-->
-    <!--        android:id="@+id/content"-->
-    <!--        android:layout_width="0dp"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:background="@android:color/transparent"-->
-    <!--        android:hint="@string/post_content"-->
-    <!--        android:importantForAutofill="no"-->
-    <!--        android:inputType="textMultiLine"-->
-    <!--        android:padding="10dp"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toStartOf="@id/save"-->
-    <!--        app:layout_constraintStart_toStartOf="parent" />-->
-
-    <!--    <ImageView-->
-    <!--        android:id="@+id/save"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:padding="10dp"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:srcCompat="@drawable/outline_check_circle_24" />-->
-
-    <!--    <ImageView-->
-    <!--        android:id="@+id/closed"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:padding="10dp"-->
-    <!--        app:layout_constraintBottom_toTopOf="@id/bottomBarrier"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:srcCompat="@drawable/ic_icons8_close" />-->
-
-    <!--    <androidx.constraintlayout.widget.Barrier-->
-    <!--        android:id="@+id/bottomBarrier"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        app:barrierDirection="top"-->
-    <!--        app:constraint_referenced_ids="content, save, closed" />-->
-
-    <!--    <androidx.constraintlayout.widget.Group-->
-    <!--        android:id="@+id/group"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:visibility="gone"-->
-    <!--        app:constraint_referenced_ids="closed" />-->
-
 </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

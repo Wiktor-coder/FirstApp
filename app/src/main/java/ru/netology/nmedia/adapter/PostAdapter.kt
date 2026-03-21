@@ -6,8 +6,6 @@ import androidx.recyclerview.widget.ListAdapter
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
 
-
-
 class PostAdapter(
     private val listener: PostListener
 ) : ListAdapter<Post, PostViewHolder>(PostDiffItemCallback()) {
