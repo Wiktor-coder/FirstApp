@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.entity.PostEntity
 
-@Database(entities = [PostEntity::class], version = 2, exportSchema = false)
+@Database(entities = [PostEntity::class], version = 3, exportSchema = false)
 abstract class AppDb: RoomDatabase() {
 
     abstract val postDao: PostDao
@@ -31,26 +31,5 @@ abstract class AppDb: RoomDatabase() {
                 .allowMainThreadQueries() // доступ запросов с главного потока
                 .fallbackToDestructiveMigration(true)
                 .build()
-
-//        private fun buildDatabase(context: Context, DDLs: Array<String>) = DbHelper(
-//            context, 1, "app.db", DDLs,
-//        ).writableDatabase
     }
 }
-
-//class DbHelper(context: Context, dbVersion: Int, dbName: String, private val DDLs: Array<String>) :
-//    SQLiteOpenHelper(context, dbName, null, dbVersion) {
-//    override fun onCreate(db: SQLiteDatabase) {
-//        DDLs.forEach {
-//            db.execSQL(it)
-//        }
-//    }
-//
-//    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-//        TODO("Not implemented")
-//    }
-//
-//    override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-//        TODO("Not implemented")
-//    }
-//}

@@ -4,21 +4,24 @@ import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 import ru.netology.nmedia.entity.PostEntity
 
 @Dao
 interface PostDao {
     @Query("SELECT * FROM PostEntity ORDER BY id DESC")
-    fun getAllLive(): LiveData<List<PostEntity>>
+    fun observeAll(): Flow<List<PostEntity>>
+    @Query("SELECT * FROM PostEntity ORDER BY id DESC")
+    fun getAllLive(): Flow<List<PostEntity>>
 
     @Query("SELECT * FROM PostEntity ORDER BY id DESC")
     fun getAll():List<PostEntity> //сразу возвращаем LiveData, подписку на изменения таблицы
 
     @Upsert //
-    fun save(post: PostEntity): Long
+    suspend fun save(post: PostEntity): Long
 
     @Upsert
-    fun saveAll(posts: List<PostEntity>)
+    suspend fun saveAll(posts: List<PostEntity>)
 
     @Query(
         """ UPDATE PostEntity SET
@@ -26,7 +29,7 @@ interface PostDao {
              likedByMe = CASE WHEN likedByMe THEN 0 ELSE 1 END
              WHERE id = :id;
              """)
-    fun likeById(id: Long)
+    suspend fun likeById(id: Long)
 
     @Query(""" UPDATE PostEntity SET
         shareCount = shareCount + 1
@@ -35,5 +38,5 @@ interface PostDao {
     fun shareById(id: Long) //поделится
 
     @Query("DELETE FROM PostEntity WHERE id = :id")
-    fun removeById(id: Long) //удаление
+    suspend fun removeById(id: Long) //удаление
 }

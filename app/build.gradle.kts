@@ -41,6 +41,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"http://netology.ru\"")
         }
         debug {
+            isDebuggable = true
             manifestPlaceholders["usesCleartextTraffic"] = true
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:9999\"")
         }
@@ -80,6 +81,15 @@ dependencies {
     ksp(libs.compiler)
     implementation(libs.androidx.cardview)
     ksp(libs.androidx.room.compiler)
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
+    // Lifecycle components with coroutines
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    // Room with coroutines
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

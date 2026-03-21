@@ -1,286 +1,277 @@
 package ru.netology.nmedia.viewmodel
 
 import android.app.Application
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.map
-import retrofit2.HttpException
-import ru.netology.nmedia.db.AppDb
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.model.ErrorType
-import ru.netology.nmedia.model.FeedModel
-import ru.netology.nmedia.repository.PostRepository
+import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
-import ru.netology.nmedia.utils.SingleLiveEvent
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import retrofit2.HttpException
+import ru.netology.nmedia.model.ErrorType
+import ru.netology.nmedia.model.FeedModel
+import ru.netology.nmedia.utils.Result
+import ru.netology.nmedia.utils.Result.*
 
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDb.getInstance(application).postDao
-    private val repository: PostRepository =
-        PostRepositorySQLiteImpl(application.applicationContext, dao)
+    private val repository = PostRepositorySQLiteImpl(application.applicationContext, dao)
 
-    private val _data = MutableLiveData<FeedModel>(FeedModel())
-    val data: LiveData<FeedModel> = _data
+    // Состояние UI с использованием StateFlow
+    private val _data = MutableStateFlow(FeedModel())
+    val data: StateFlow<FeedModel> = _data.asStateFlow()
 
-    private val _edited = MutableLiveData<Post?>()
-    val edited: LiveData<Post?> = _edited
-    val isEditing: LiveData<Boolean> = _edited.map { it != null }
+    private val _edited = MutableStateFlow<Post?>(null)
+    val edited: StateFlow<Post?> = _edited.asStateFlow()
 
-    private val _postCreated = SingleLiveEvent<Result<Unit>>()
-    val postCreated: LiveData<Result<Unit>> = _postCreated
+    private val _postCreated = MutableSharedFlow<Result<Unit>>()
+    val postCreated: SharedFlow<Result<Unit>> = _postCreated.asSharedFlow()
 
-    val _postError = SingleLiveEvent<String>()
-    val postError: LiveData<String> = _postError
+    private val _postSuccess = MutableSharedFlow<Unit>()
+    val postSuccess: SharedFlow<Unit> = _postSuccess.asSharedFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _postError = MutableSharedFlow<String>()
+    val postError: SharedFlow<String> = _postError.asSharedFlow()
 
-    private val _postSuccess = SingleLiveEvent<Unit>()
-    val postSuccess: LiveData<Unit> = _postSuccess
+    private val _error = MutableSharedFlow<String>()
+    val error: SharedFlow<String> = _error.asSharedFlow()
 
     init {
-        loadPost()
+        observePosts()
+        loadPosts()
     }
 
-    fun loadPost(useCache: Boolean = true) {
-//        _data.postValue(FeedModel(loading = true))
-        _data.value = FeedModel(loading = true, posts = _data.value?.posts ?: emptyList())
+    private fun observePosts() {
+        repository.observePosts()
+            .onEach { posts: List<Post> ->
+                _data.update { currentState: FeedModel ->
+                    currentState.copy(
+                        posts = posts,
+                        empty = posts.isEmpty(),
+                        loading = false
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
-//        if (useCache) {
-//            // Показываем кэшированные данные сразу
-//            val cachedPosts = repository.getLocalPosts()
-//            if (cachedPosts.isNotEmpty()) {
-//                _data.postValue(FeedModel(posts = cachedPosts))
-//            }
-//        }
-        if (useCache) {
-            val cachedPosts = repository.getLocalPosts()
-            if (cachedPosts.isNotEmpty()) {
-                // Показываем кэш, но оставляем loading=true для фоновой загрузки
-                _data.value = FeedModel(
-                    posts = cachedPosts,
-                    loading = true  // показываем, что идет обновление
-                )
+    fun loadPosts(useCache: Boolean = true) {
+        viewModelScope.launch {
+            _data.update { it.copy(loading = true) }
+
+            if (useCache) {
+                val cachedPosts = repository.getLocalPosts()
+                if (cachedPosts.isNotEmpty()) {
+                    _data.update { currentState ->
+                        currentState.copy(
+                            posts = cachedPosts,
+                            loading = true
+                        )
+                    }
+                }
+            }
+
+            val result = repository.getAll()
+            when (result) {
+                is Success<List<Post>> -> {
+                    _data.update { currentState ->
+                        currentState.copy(
+                            loading = false,
+                            error = false
+                        )
+                    }
+                }
+
+                is Error -> {
+                    val errorType = determineErrorType(result.exception)
+                    _data.update { currentState ->
+                        currentState.copy(
+                            error = true,
+                            loading = false,
+                            errorType = errorType
+                        )
+                    }
+                    result.exception?.let { handleError(it) }
+                }
+
+                is Loading -> {
+                    _data.update { currentState ->
+                        currentState.copy(
+                            loading = true
+                        )
+                    }
+                }
             }
         }
-
-        repository.getAllAsync(object : PostRepository.PostCallback<List<Post>> {
-            override fun onSuccess(result: List<Post>) {
-                _data.value = FeedModel(
-                    posts = result,
-                    empty = result.isEmpty(),
-                    loading = false
-                )
-                _error.value = null
-            }
-
-            override fun onError(error: Throwable) {
-                error.printStackTrace()
-                val errorType = when (error) {
-                    is UnknownHostException -> ErrorType.NETWORK
-                    is SocketTimeoutException -> ErrorType.TIMEOUT
-                    is HttpException -> {
-                        when (error.code()) {
-                            in 400..499 -> ErrorType.CLIENT
-                            in 500..599 -> ErrorType.SERVER
-                            else -> ErrorType.UNKNOWN
-                        }
-                    }
-
-                    else -> ErrorType.UNKNOWN
-                }
-                // Формируем сообщение для пользователя
-                val errorMessage = when (errorType) {
-                    ErrorType.NETWORK -> "Нет подключения к интернету"
-                    ErrorType.TIMEOUT -> "Превышено время ожидания"
-                    ErrorType.SERVER -> "Ошибка на сервере. Попробуйте позже"
-                    ErrorType.CLIENT -> "Ошибка запроса"
-                    ErrorType.UNKNOWN -> "Неизвестная ошибка: ${error.message}"
-                }
-
-                _error.value = errorMessage
-
-                // Важно: при ошибке показываем кэшированные данные (если они есть)
-                val currentPosts = _data.value?.posts ?: emptyList()
-                _data.value = FeedModel(
-                    posts = currentPosts,  // Сохраняем старые посты
-                    error = true,
-                    errorType = errorType,
-                    loading = false,
-                    empty = currentPosts.isEmpty()  // Пусто только если нет ни кэша, ни новых
-                )
-
-                //_error.postValue(e.message ?: "Неизвестная ошибка")
-//                _data.value = FeedModel(error = true, errorType = errorType)
-            }
-        })
     }
 
     fun likeById(id: Long) {
-        val currentPosts = _data.value?.posts.orEmpty()
-        val currentPost = currentPosts.find { it.id == id }
+        viewModelScope.launch {
+            val currentPosts = _data.value.posts
+            val currentPost = currentPosts.find { it.id == id } ?: return@launch
 
-        if (currentPost == null) return
+            val isLiking = !currentPost.likedByMe
 
-        // Определяем, ставим лайк или снимаем
-        val isLiking = !currentPost.likedByMe
-
-        // Оптимистичное обновление UI
-        val updatedPosts = currentPosts.map { post ->
-            if (post.id == id) {
-                post.copy(
-                    likedByMe = isLiking,
-                    likeCount = if (isLiking) post.likeCount + 1 else post.likeCount - 1
+            // Оптимистичное обновление
+            _data.update { state ->
+                state.copy(
+                    posts = state.posts.map { post ->
+                        if (post.id == id) {
+                            post.copy(
+                                likedByMe = isLiking,
+                                likeCount = if (isLiking) post.likeCount + 1 else post.likeCount - 1
+                            )
+                        } else {
+                            post
+                        }
+                    }
                 )
+            }
+
+            val result = if (isLiking) {
+                repository.likeById(id)
             } else {
-                post
+                repository.unlikeById(id)
             }
-        }
-        _data.value = FeedModel(posts = updatedPosts)
 
-        // Вызываем соответствующий метод API
-        val callback = object : PostRepository.PostCallback<Post> {
-            override fun onSuccess(result: Post) {
-                // Обновляем конкретный пост из ответа сервера
-                val finalPosts = _data.value?.posts?.map {
-                    if (it.id == result.id) result else it
+            when (result) {
+                is Success<Post> -> {
+                    // Обновление уже произошло через observePosts
                 }
-                finalPosts?.let { _data.postValue(FeedModel(posts = it)) }
-            }
 
-            override fun onError(error: Throwable) {
-                error.printStackTrace()
-                // Откатываем изменения при ошибке
-                _data.postValue(FeedModel(posts = currentPosts))
-
-                // Показываем ошибку
-                val errorMessage = when (error) {
-                    is UnknownHostException -> "Нет интернета"
-                    is SocketTimeoutException -> "Таймаут"
-                    else -> "Не удалось ${if (isLiking) "поставить" else "снять"} лайк"
+                is Error -> {
+                    // Откат при ошибке
+                    _data.update { state ->
+                        state.copy(posts = currentPosts)
+                    }
+                    result.message.let { _postError.emit(it) }
                 }
-                _postError.postValue(errorMessage)
-            }
-        }
 
-        if (isLiking) {
-            repository.likeByAsync(id, callback)
-        } else {
-            repository.unlikeByAsync(id, callback)
+                is Loading -> {}
+            }
         }
     }
-
-//    fun shareById(id: Long) {
-//        thread {
-//            try {
-//                repository.shareById(id)
-//                // Не вызываем loadPost() здесь, чтобы избежать лишних запросов
-//                // Просто обновляем счетчик шеринга через локальное обновление
-//                val currentPosts = _data.value?.posts.orEmpty()
-//                val updatedPosts = currentPosts.map { post ->
-//                    if (post.id == id) {
-//                        post.copy(shareCount = post.shareCount + 1)
-//                    } else post
-//                }
-//                _data.postValue(FeedModel(posts = updatedPosts))
-//            } catch (e: IOException) {
-//                e.printStackTrace()
-//                _data.postValue(FeedModel(error = true))
-//            }
-//        }
-//    }
 
     fun removeById(id: Long) {
-        repository.removeByAsync(id, object : PostRepository.PostCallback<Unit> {
-            override fun onSuccess(result: Unit) {
-                // Удаляем пост из текущего списка
-                val currentPosts = _data.value?.posts.orEmpty()
-                val updatedPosts = currentPosts.filter { it.id != id }
-                _data.postValue(FeedModel(posts = updatedPosts, empty = updatedPosts.isEmpty()))
-            }
+        viewModelScope.launch {
+            val result = repository.removeById(id)
+            when (result) {
+                is Success<Unit> -> {
+                    // Удаление через observePosts
+                }
 
-            override fun onError(error: Throwable) {
-                error.printStackTrace()
-                _error.postValue(errorHandler(error))
-                _data.postValue(FeedModel(error = true))
+                is Error -> {
+                    result.message.let { _postError.emit(it) }
+                }
 
+                is Loading -> {}
             }
-        })
+        }
     }
 
-    fun edit(post: Post) {
-        _edited.postValue(post)
+    fun createPost(content: String) {
+        viewModelScope.launch {
+            if (content.isNotBlank()) {
+                val newPost = Post(
+                    id = 0L,
+                    author = "My Post",
+                    authorAvatar = null,
+                    published = System.currentTimeMillis(),
+                    content = content.trim(),
+                    likeCount = 0,
+                    shareCount = 0,
+                    likedByMe = false,
+                    video = null,
+                    attachment = null
+                )
+
+                val result = repository.save(newPost)
+                when (result) {
+                    is Success -> {
+                        _postCreated.emit(Success(Unit))
+                    }
+
+                    is Error -> {
+                        _postCreated.emit(Error(result.message))
+                    }
+
+                    is Loading -> {
+                        // Может быть промежуточное состояние
+                    }
+                }
+            }
+        }
     }
 
     fun save(newContent: String) {
-        edited.value?.let { post ->
-            if (post.content != newContent) {
-                repository.saveByAsync(
-                    post.copy(content = newContent),
-                    object : PostRepository.PostCallback<Post> {
-                        override fun onSuccess(result: Post) {
-                            // Обновляем пост в списке
-                            val currentPosts = _data.value?.posts.orEmpty()
-                            val updatedPosts = currentPosts.map {
-                                if (it.id == result.id) result else it
-                            }
-                            _data.postValue(FeedModel(posts = updatedPosts))
-                            _edited.postValue(null)
-                            _postSuccess.postValue(Unit)
-                        }
+        viewModelScope.launch {
+            Log.d("PostViewModel", "save() called with content: '$newContent'")
 
-                        override fun onError(error: Throwable) {
-                            error.printStackTrace()
-                            _postError.postValue(errorHandler(error))
-//                            _error.postValue(errorHandler(e))
-//                            _data.postValue(FeedModel(error = true))
+            val currentPost = _edited.value
+            if (currentPost != null) {
+                if (currentPost.content != newContent) {
+                    Log.d("PostViewModel", "Content changed, updating post")
+
+                    val updatedPost = currentPost.copy(content = newContent)
+                    val result = repository.save(updatedPost)
+
+                    when (result) {
+                        is Success<Post> -> {
+                            Log.d("PostViewModel", "Post saved successfully")
+                            _edited.value = null
+                            _postSuccess.emit(Unit)
                         }
-                    })
+                        is Error -> {
+                            Log.e("PostViewModel", "Error saving post: ${result.message}")
+                            result.message.let { _postError.emit(it) }
+                        }
+                        is Loading -> {
+                            Log.d("PostViewModel", "Saving post...")
+                        }
+                    }
+                } else {
+                    Log.d("PostViewModel", "Content not changed, closing editor")
+                    _edited.value = null
+                    _postSuccess.emit(Unit)
+                }
+            } else {
+                Log.e("PostViewModel", "No post to edit")
+                _postError.emit("Ошибка: пост не найден")
             }
         }
     }
 
-    fun cancelEdited() {
-        _edited.postValue(null)
+    fun edit(post: Post) {
+        _edited.value = post
     }
 
-//    @RequiresApi(Build.VERSION_CODES.O)
-    fun createPost(content: String) {
-        if (content.isNotBlank()) {
-            val newPost = Post(
-                id = 0L,
-                author = "My Post",
-                authorAvatar = "No Name",
-                published = System.currentTimeMillis(),
-                content = content.trim(),
-                likeCount = 0,
-                shareCount = 0,
-                likedByMe = false,
-            )
+    fun cancelEdited() {
+        _edited.value = null
+    }
 
-            repository.saveByAsync(newPost, object : PostRepository.PostCallback<Post> {
-                override fun onSuccess(result: Post) {
-                    // Добавляем новый пост в начало списка
-                    val currentPosts = _data.value?.posts.orEmpty()
-                    val updatedPosts = listOf(result) + currentPosts
-                    _data.postValue(FeedModel(posts = updatedPosts))
-                    _postCreated.postValue(Result.success(Unit))
-                    _postSuccess.postValue(Unit)
+    private fun handleError(exception: Throwable) {
+        viewModelScope.launch {
+            _error.emit(errorHandler(exception))
+        }
+    }
+
+    private fun determineErrorType(exception: Throwable?): ErrorType {
+        return when (exception) {
+            is UnknownHostException -> ErrorType.NETWORK
+            is SocketTimeoutException -> ErrorType.TIMEOUT
+            is HttpException -> {
+                when (exception.code()) {
+                    in 400..499 -> ErrorType.CLIENT
+                    in 500..599 -> ErrorType.SERVER
+                    else -> ErrorType.UNKNOWN
                 }
+            }
 
-                override fun onError(error: Throwable) {
-                    error.printStackTrace()
-                    _postError.postValue(errorHandler(error))
-//                    _error.postValue(errorHandler(e))
-//                    _data.postValue(FeedModel(error = true))
-
-                }
-            })
-//
+            else -> ErrorType.UNKNOWN
         }
     }
 
@@ -289,7 +280,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 private fun errorHandler(e: Throwable): String {
-    val errorMessage = when (e) {
+    return when (e) {
         is UnknownHostException -> "Нет подключения к интернету"
         is SocketTimeoutException -> "Превышено время ожидания"
         is HttpException -> {
@@ -302,5 +293,4 @@ private fun errorHandler(e: Throwable): String {
 
         else -> "Неизвестная ошибка: ${e.message}"
     }
-    return errorMessage
 }

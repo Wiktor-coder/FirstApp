@@ -2,11 +2,13 @@ package ru.netology.nmedia.adapter
 
 import android.content.Intent
 import android.graphics.drawable.Drawable
-import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.net.toUri
+import androidx.navigation.Navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -72,26 +74,17 @@ class PostViewHolder(
             videoContainer.visibility = View.GONE
 
             post.attachment?.let { attachment ->
-                Log.d("ATTACHMENT_DEBUG", "=== Attachment Debug ===")
-                Log.d("ATTACHMENT_DEBUG", "Post ID: ${post.id}")
-                Log.d("ATTACHMENT_DEBUG", "Attachment type: ${attachment.type}")
-                Log.d("ATTACHMENT_DEBUG", "Attachment URL: ${attachment.url}")
-                Log.d("ATTACHMENT_DEBUG", "Attachment description: ${attachment.description}")
-
                 val attachmentUrl = repository.getAttachmentUrl(attachment)
-                Log.d("ATTACHMENT_DEBUG", "Full attachment URL: $attachmentUrl")
 
                 when (attachment.type) {
                     AttachmentType.IMAGE -> {
-                        Log.d("ATTACHMENT_DEBUG", "Loading IMAGE from: $attachmentUrl")
                         attachmentContainer.visibility = View.VISIBLE
 
                         Glide.with(attachmentImage.context)
                             .load(attachmentUrl)
                             .placeholder(R.drawable.downloading_24)
                             .error(R.drawable.info_outline_24)
-                            .centerCrop()
-                            .timeout(10_000)
+                            .timeout(30000)
                             .listener(object : RequestListener<Drawable> {
                                 override fun onLoadFailed(
                                     e: GlideException?,
@@ -99,26 +92,27 @@ class PostViewHolder(
                                     target: Target<Drawable>,
                                     isFirstResource: Boolean
                                 ): Boolean {
-                                    Log.e("ATTACHMENT_DEBUG", "Failed to load image: $attachmentUrl", e)
+                                    Log.e("ATTACHMENT_DEBUG", "Glide load failed", e)
                                     return false
                                 }
 
                                 override fun onResourceReady(
-                                    resource: Drawable,
+                                    resource:Drawable,
                                     model: Any?,
                                     target: Target<Drawable>,
                                     dataSource: DataSource,
                                     isFirstResource: Boolean
                                 ): Boolean {
-                                    Log.d("ATTACHMENT_DEBUG", "Successfully loaded image: $attachmentUrl")
+                                    Log.d("ATTACHMENT_DEBUG", "Image loaded successfully")
                                     return false
                                 }
                             })
                             .into(attachmentImage)
 
-                        attachmentContainer.setOnClickListener {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(attachmentUrl))
-                            it.context.startActivity(intent)
+                        attachmentContainer.setOnClickListener { view ->
+                            attachmentUrl?.let { url ->
+                                listener.onImageClick(url)
+                            }
                         }
                     }
 
@@ -127,23 +121,25 @@ class PostViewHolder(
                         videoContainer.visibility = View.VISIBLE
                         loadVideoThumbnail(attachmentUrl)
 
-                        videoContainer.setOnClickListener {
+                        videoContainer.setOnClickListener { view ->
                             try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(attachmentUrl))
-                                val pm = it.context.packageManager
-                                if (intent.resolveActivity(pm) != null) {
-                                    it.context.startActivity(intent)
-                                } else {
-                                    Toast.makeText(
-                                        it.context,
-                                        R.string.no_app_to_open_video,
-                                        Toast.LENGTH_LONG,
-                                    ).show()
+                                attachmentUrl?.let { url ->
+                                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                    val packageManager = view.context.packageManager
+                                    if (intent.resolveActivity(packageManager) != null) {
+                                        view.context.startActivity(intent)
+                                    } else {
+                                        Toast.makeText(
+                                            view.context,
+                                            R.string.no_app_to_open_video,
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
                                 }
                             } catch (e: Exception) {
                                 Log.e("ATTACHMENT_DEBUG", "Error opening video", e)
                                 Toast.makeText(
-                                    it.context,
+                                    view.context,
                                     R.string.invalid_video_url,
                                     Toast.LENGTH_LONG
                                 ).show()

@@ -1,20 +1,23 @@
 package ru.netology.nmedia.fragment
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
+import android.widget.PopupMenu
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.PopupMenu
-import androidx.core.os.bundleOf
+import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import android.widget.Toast
-import android.net.Uri
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
 import ru.netology.nmedia.dto.AttachmentType
@@ -22,60 +25,68 @@ import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.toFormattedDate
 import ru.netology.nmedia.viewmodel.PostViewModel
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 
 class SinglePostFragment : Fragment() {
 
-    //private val args: SinglePostFragmentArgs by navArgs() // ← если используете Safe Args
     private var _binding: FragmentSinglePostBinding? = null
     private val binding get() = _binding!!
     private val repository: PostRepositorySQLiteImpl by lazy {
         PostRepositorySQLiteImpl(requireContext())
     }
-    val viewModel by activityViewModels<PostViewModel>()
+    private val viewModel by activityViewModels<PostViewModel>()
+
+    // ДОБАВЛЯЕМ onCreateView - это обязательный метод!
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        Log.d("SinglePostFragment", "onCreateView")
         _binding = FragmentSinglePostBinding.inflate(inflater, container, false)
         return binding.root
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d("SinglePostFragment", "onViewCreated")
 
-        // Получаем postId (если используете Safe Args)
-        val postId = arguments?.getLong("postId") ?: run {
+        val postId = arguments?.getLong("postId")
+        Log.d("SinglePostFragment", "Received postId: $postId")
+
+        if (postId == null) {
+            Log.e("SinglePostFragment", "postId is null")
             findNavController().navigateUp()
             return
         }
 
-        // Подписываемся на список постов
-//        viewModel.get().observe(viewLifecycleOwner) { posts ->
-//            val post = posts.find { it.id == postId }
-//            if (post != null) {
-//                bind(post)
-//            } else {
-//                findNavController().navigateUp()
-//            }
-//        }
-//        val posts = viewModel.get()
-//        val post = posts.find { it.id == postId }
-//        if (post != null) {
-//            bind(post)
-//        } else {
-//            findNavController().navigateUp()
-//        }
-        viewModel.data.observe(viewLifecycleOwner) { feedModel ->
-            val post = feedModel.posts.find { it.id == postId }
-            if (post != null) {
-                bind(post)
-            } else if (!feedModel.loading && !feedModel.error) {
-                findNavController().navigateUp()
-            }
+        // Добавляем debug TextView для отладки
+        binding.debugInfo.visibility = View.VISIBLE
+        binding.debugInfo.text = "Post ID: $postId\nLoading..."
+
+        // Проверяем, есть ли данные
+        if (viewModel.data.value.posts.isEmpty()) {
+            Log.d("SinglePostFragment", "No posts, loading...")
+            viewModel.loadPosts()
         }
 
-        // Кнопка "Назад" — системная, но можно добавить toolbar, если нужно
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.data.collect { feedModel ->
+                Log.d("SinglePostFragment", "Data collected: ${feedModel.posts.size} posts")
+
+                val post = feedModel.posts.find { it.id == postId }
+                if (post != null) {
+                    Log.d("SinglePostFragment", "Found post: ${post.content.take(50)}")
+                    bind(post)
+                    binding.debugInfo.visibility = View.GONE // Скрываем debug после загрузки
+                } else if (!feedModel.loading && feedModel.posts.isNotEmpty()) {
+                    Log.w("SinglePostFragment", "Post not found")
+                    binding.debugInfo.text = "Post not found!\nAvailable: ${feedModel.posts.map { it.id }}"
+                }
+            }
+        }
     }
 
     private fun bind(post: Post) {
@@ -87,38 +98,11 @@ class SinglePostFragment : Fragment() {
             Like.isChecked = post.likedByMe
             Share.text = post.shareCount.toString()
             loadAvatar(post.authorAvatar)
-
             handleAttachments(post)
 
-            // Видео
-            if (post.video.isNullOrBlank()) {
-                videoContainer.visibility = View.GONE
-            } else {
-                videoContainer.visibility = View.VISIBLE
-                // Можно загрузить превью, но пока оставим заглушку
-            }
-
-            // Обработчики
-//            postRoot.setOnClickListener {
-//                // Игнорируем — клик по всему посту не должен ничего делать
-//                // (но на самом деле он и не нужен, т.к. мы уже в SinglePost)
-//            }
-
-            _binding?.Like?.setOnClickListener {
+            Like.setOnClickListener {
                 viewModel.likeById(post.id)
             }
-
-//            Share.setOnClickListener {
-//                viewModel.shareById(post.id)
-//                // Share intent
-//                val intent = Intent().apply {
-//                    action = Intent.ACTION_SEND
-//                    type = "text/plain"
-//                    putExtra(Intent.EXTRA_TEXT, post.content)
-//                }
-//                val chooser = Intent.createChooser(intent, getString(R.string.chooser_share_post))
-//                startActivity(chooser)
-//            }
 
             menu.setOnClickListener {
                 showMenu(post)
@@ -136,58 +120,44 @@ class SinglePostFragment : Fragment() {
                 .error(R.drawable.info_outline_24)
                 .circleCrop()
                 .timeout(10_000)
-                .diskCacheStrategy(DiskCacheStrategy.NONE) // Для тестирования
-                .skipMemoryCache(true) // Для тестирования
                 .into(binding.avatar)
         } catch (e: Exception) {
-            Log.e("SinglePost", "Error loading avatar", e)
+            e.printStackTrace()
         }
-
     }
 
     private fun showMenu(post: Post) {
-        // Создайте PopupMenu или AlertDialog с "Изменить" и "Удалить"
-        val popup = PopupMenu(requireContext(), binding.menu)
-        popup.menuInflater.inflate(R.menu.post_menu, popup.menu)
-
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.edit -> {
-                    viewModel.edit(post)
-                    val bundle = bundleOf("postId" to post.id)
-                    findNavController().navigate(
-                        R.id.editPostFragment, bundle
-                    )
-                    true
+        PopupMenu(requireContext(), binding.menu).apply {
+            inflate(R.menu.post_menu)
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.edit -> {
+                        val bundle = Bundle().apply {
+                            putLong("postId", post.id)
+                        }
+                        findNavController().navigate(R.id.editPostFragment, bundle)
+                        true
+                    }
+                    R.id.remove -> {
+                        viewModel.removeById(post.id)
+                        findNavController().navigateUp()
+                        true
+                    }
+                    else -> false
                 }
-
-                R.id.remove -> {
-                    viewModel.removeById(post.id)
-                    findNavController().navigateUp() // возврат в ленту
-                    true
-                }
-
-                else -> false
             }
+            show()
         }
-        popup.show()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     private fun handleAttachments(post: Post) {
         with(binding) {
-            // Скрываем контейнеры по умолчанию
             attachmentContainer.visibility = View.GONE
             videoContainer.visibility = View.GONE
 
             post.attachment?.let { attachment ->
-                Log.d("SinglePost", "Attachment: type=${attachment.type}, url=${attachment.url}")
-
                 val attachmentUrl = repository.getAttachmentUrl(attachment)
+                val uri = attachmentUrl?.toUri()
 
                 when (attachment.type) {
                     AttachmentType.IMAGE -> {
@@ -197,42 +167,64 @@ class SinglePostFragment : Fragment() {
                             .load(attachmentUrl)
                             .placeholder(R.drawable.downloading_24)
                             .error(R.drawable.info_outline_24)
-                            .centerCrop()
+                            .timeout(30000)
+                            .listener(object : RequestListener<Drawable> {
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Drawable>,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    Log.e("SinglePostFragment", "Glide load failed", e)
+                                    return false
+                                }
+
+                                override fun onResourceReady(
+                                    resource: Drawable,
+                                    model: Any?,
+                                    target: Target<Drawable>,
+                                    dataSource: DataSource,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    Log.d("SinglePostFragment", "Image loaded successfully")
+                                    return false
+                                }
+                            })
                             .into(attachmentImage)
 
                         attachmentContainer.setOnClickListener {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(attachmentUrl))
-                            it.context.startActivity(intent)
+                            attachmentUrl?.let { url ->
+                                val bundle = Bundle().apply {
+                                    putString("imageUrl", url)
+                                }
+                                findNavController().navigate(
+                                    R.id.fullScreenImageFragment,
+                                    bundle
+                                )
+                            }
                         }
                     }
 
                     AttachmentType.VIDEO -> {
-                        videoContainer.visibility = View.VISIBLE
-
-                        // Загружаем превью видео
-                        Glide.with(videoThumbnail.context)
-                            .load(attachmentUrl)
-                            .placeholder(R.drawable.downloading_24)
-                            .error(R.drawable.info_outline_24)
-                            .centerCrop()
-                            .into(videoThumbnail)
-
+                        // ... существующий код ...
                         videoContainer.setOnClickListener {
                             try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(attachmentUrl))
-                                val pm = it.context.packageManager
-                                if (intent.resolveActivity(pm) != null) {
-                                    it.context.startActivity(intent)
-                                } else {
-                                    Toast.makeText(
-                                        it.context,
-                                        R.string.no_app_to_open_video,
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                uri?.let {
+                                    val intent = Intent(Intent.ACTION_VIEW, it)
+                                    val pm = requireContext().packageManager
+                                    if (intent.resolveActivity(pm) != null) {
+                                        startActivity(intent)
+                                    } else {
+                                        Toast.makeText(
+                                            requireContext(),
+                                            R.string.no_app_to_open_video,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 }
                             } catch (e: Exception) {
                                 Toast.makeText(
-                                    it.context,
+                                    requireContext(),
                                     R.string.invalid_video_url,
                                     Toast.LENGTH_LONG
                                 ).show()
@@ -240,10 +232,8 @@ class SinglePostFragment : Fragment() {
                         }
                     }
 
-                    AttachmentType.AUDIO -> {
-                        attachmentContainer.visibility = View.VISIBLE
-                        attachmentImage.setImageResource(R.drawable.audio_file_24)
-                    }
+                    // ... остальные типы ...
+                    AttachmentType.AUDIO -> TODO()
                 }
             }
         }
