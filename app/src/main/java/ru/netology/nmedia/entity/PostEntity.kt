@@ -13,6 +13,9 @@ data class PostEntity(
     @ColumnInfo(name = "id")
     val id: Long = 0,
 
+    @ColumnInfo(name = "authorId")
+    val authorId: Long,
+
     @ColumnInfo(name = "author")
     val author: String,
 
@@ -44,10 +47,14 @@ data class PostEntity(
     val attachmentType: String? = null,
 
     @ColumnInfo(name = "attachmentDescription")
-    val attachmentDescription: String? = null
+    val attachmentDescription: String? = null,
+
+    @ColumnInfo(name = "ownedByMe")
+    val ownedByMe: Boolean = false,
 ) {
     fun toPost(): Post = Post(
         id = id,
+        authorId = authorId,
         author = author,
         authorAvatar = authorAvatar,
         published = published,
@@ -56,7 +63,8 @@ data class PostEntity(
         shareCount = shareCount,
         likedByMe = likedByMe,
         video = video,
-        attachment = createAttachment()
+        attachment = createAttachment(),
+        ownedByMe = ownedByMe,
     )
 
     private fun createAttachment(): Attachment? {
@@ -80,6 +88,7 @@ data class PostEntity(
         fun fromPost(post: Post): PostEntity = with(post) {
             PostEntity(
                 id = id,
+                authorId = authorId,
                 author = author,
                 authorAvatar = authorAvatar,
                 published = published,
@@ -88,9 +97,11 @@ data class PostEntity(
                 shareCount = shareCount,
                 likedByMe = likedByMe,
                 video = video,
+                ownedByMe = ownedByMe,
                 attachmentUrl = attachment?.url,
                 attachmentType = attachment?.type?.name,
-                attachmentDescription = attachment?.description
+                attachmentDescription = attachment?.description,
+
             )
         }
     }

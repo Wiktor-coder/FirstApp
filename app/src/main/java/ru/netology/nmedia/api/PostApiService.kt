@@ -3,15 +3,20 @@ package ru.netology.nmedia.api
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 import retrofit2.http.Body
 import retrofit2.http.DELETE
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import ru.netology.nmedia.BuildConfig
+import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.dto.AuthResponse
 import ru.netology.nmedia.dto.Post
 import java.util.concurrent.TimeUnit
 
@@ -25,6 +30,15 @@ private val client = OkHttpClient.Builder()
             HttpLoggingInterceptor.Level.NONE // выключаем логи для релиза
         }
     }) // перехватчик логер
+//    .addInterceptor { chain ->
+//        AppAuth.getInstance().authStateFlow.value.token?.let { token ->
+//            val newRequest = chain.request().newBuilder()
+//                .addHeader("Authorization", token)
+//                .build()
+//            return@addInterceptor chain.proceed(newRequest)
+//        }
+//        chain.proceed(chain.request())
+//    }
     .connectTimeout(30, TimeUnit.SECONDS)
     .readTimeout(30, TimeUnit.SECONDS)  // Добавьте readTimeout
     .writeTimeout(30, TimeUnit.SECONDS) // Добавьте writeTimeout
@@ -52,6 +66,13 @@ interface PostApiService {
 
     @DELETE("posts/{id}")
     fun delete(@Path("id") postId: Long): Call<Unit>
+
+    @FormUrlEncoded
+    @POST("users/authentication")
+    suspend fun authenticate(
+        @Field("login") login: String,
+        @Field("pass") pass: String
+    ): Response<AuthResponse>
 
 }
 

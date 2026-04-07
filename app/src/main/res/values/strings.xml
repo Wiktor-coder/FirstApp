@@ -34,5 +34,8 @@
     <string name="retry_network">Check the connection</string>
     <string name="retry_later">Repeat later</string>
     <string name="full_screen_image">Полноэкранное изображение</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_out">Sign Out</string>
 
 </resources>

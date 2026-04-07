@@ -19,6 +19,7 @@ import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostListener
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.model.ErrorType
 
 class FeedFragment : Fragment() {
@@ -126,6 +127,16 @@ class FeedFragment : Fragment() {
                 override fun getVideoUrl(post: Post): String? {
                     return viewModel.getVideoUrl(post)
                 }
+
+//                override fun canEdit(post: Post): Boolean {
+//                    val isAuthenticated = AppAuth.getInstance().authStateFlow.value.id != 0L
+//                    return isAuthenticated && post.ownedByMe
+//                }
+//
+//                override fun canRemove(post: Post): Boolean {
+//                    val isAuthenticated = AppAuth.getInstance().authStateFlow.value.id != 0L
+//                    return isAuthenticated && post.ownedByMe
+//                }
             }
         )
 

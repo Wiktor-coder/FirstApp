@@ -22,6 +22,7 @@ import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.formatNumberCompact
 import ru.netology.nmedia.utils.toFormattedDate
 import com.bumptech.glide.request.target.Target
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.AttachmentType
 
 class PostViewHolder(
@@ -55,9 +56,19 @@ class PostViewHolder(
 //                listener.onShare(post)
 //            }
 
-            // Меню button
-            menu.setOnClickListener {
-                showPopupMenu(it, post)
+            // Управляем видимостью кнопки меню
+            val isAuthenticated = AppAuth.getInstance().authStateFlow.value.id != 0L
+            val showMenu = isAuthenticated && post.ownedByMe
+
+            menu.visibility = if (showMenu) View.VISIBLE else View.GONE
+
+            // Если меню видимо, устанавливаем слушатель
+            if (showMenu) {
+                menu.setOnClickListener {
+                    showPopupMenu(it, post)
+                }
+            } else {
+                menu.setOnClickListener(null) // Убираем слушатель, если меню скрыто
             }
 
             // Click on post
@@ -209,8 +220,19 @@ class PostViewHolder(
     }
 
     private fun showPopupMenu(view: View, post: Post) {
+        // Проверяем, может ли пользователь редактировать/удалять этот пост
+        val canEdit = listener.canEdit(post)
+        val canRemove = listener.canRemove(post)
+
+        // Если нельзя ни редактировать, ни удалять - не показываем меню
+        if (!canEdit && !canRemove) return
+
         PopupMenu(view.context, view).apply {
             inflate(R.menu.post_menu)
+
+            // Скрываем пункты меню, если недоступны
+            menu.findItem(R.id.edit).isVisible = canEdit
+            menu.findItem(R.id.remove).isVisible = canRemove
 
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
@@ -218,12 +240,10 @@ class PostViewHolder(
                         listener.onRemove(post)
                         true
                     }
-
                     R.id.edit -> {
                         listener.onEdit(post)
                         true
                     }
-
                     else -> false
                 }
             }

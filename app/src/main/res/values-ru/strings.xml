@@ -35,4 +35,7 @@
     <string name="retry_later">Повторить позже</string>
     <string name="retry_loading">Повторить</string>
     <string name="full_screen_image">Полноэкранное изображение</string>
+    <string name="sign_in">войти в систему</string>
+    <string name="sign_up">подписатся</string>
+    <string name="sign_out">выход из системы</string>
 </resources>
