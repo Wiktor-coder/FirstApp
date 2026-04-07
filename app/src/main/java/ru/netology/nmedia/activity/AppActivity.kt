@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.ActivityAppBinding
+import ru.netology.nmedia.fragment.FeedFragment
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.viewmodel.AuthViewModel
 
@@ -124,7 +125,16 @@ class AppActivity : AppCompatActivity() {
 
                     R.id.signout -> {
                         Log.d("AppActivity", "Sign out clicked")
-                        AppAuth.getInstance().removeAuth()
+                        // Показываем диалог подтверждения через ViewModel
+                        val navHostFragment = supportFragmentManager
+                            .findFragmentById(R.id.nav_controller) as NavHostFragment
+                        val currentFragment = navHostFragment.childFragmentManager.fragments.firstOrNull()
+                        if (currentFragment is FeedFragment) {
+                            currentFragment.viewModel.signOut()
+                        } else {
+                            // Если текущий фрагмент не FeedFragment, просто выходим
+                            AppAuth.getInstance().removeAuth()
+                        }
                         true
                     }
 
@@ -139,11 +149,11 @@ class AppActivity : AppCompatActivity() {
             }
         }
 
-//            viewModel.data.observe(this) {
-//                invalidateOptionsMenu()
-//            }
-//
-//        handleIntent(binding)
+            viewModel.data.observe(this) {
+                invalidateOptionsMenu()
+            }
+
+        handleIntent(binding)
     }
 
     private fun handleIntent(binding: ActivityAppBinding) {

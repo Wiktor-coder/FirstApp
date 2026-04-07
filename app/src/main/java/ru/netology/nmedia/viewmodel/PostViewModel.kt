@@ -43,6 +43,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableSharedFlow<String>()
     val error: SharedFlow<String> = _error.asSharedFlow()
 
+    private val _authRequired = MutableSharedFlow<Unit>()
+    val authRequired: SharedFlow<Unit> = _authRequired.asSharedFlow()
+
+    private val _signOutRequested = MutableSharedFlow<Unit>()
+    val signOutRequested: SharedFlow<Unit> = _signOutRequested.asSharedFlow()
+
     init {
         observePosts()
         loadPosts()
@@ -52,6 +58,40 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             AppAuth.getInstance().authStateFlow.collect {
                 loadPosts(useCache = false) // Перезагружаем посты
             }
+        }
+    }
+
+    // Проверка аутентификации
+    private fun isAuthenticated(): Boolean {
+        return AppAuth.getInstance().authStateFlow.value.id != 0L
+    }
+
+    // Метод для лайка с проверкой аутентификации
+    fun likeByIdWithAuthCheck(id: Long) {
+        if (!isAuthenticated()) {
+            viewModelScope.launch {
+                _authRequired.emit(Unit)
+            }
+            return
+        }
+        likeById(id)
+    }
+
+    // Метод для создания поста с проверкой аутентификации
+    fun createPostWithAuthCheck(content: String) {
+        if (!isAuthenticated()) {
+            viewModelScope.launch {
+                _authRequired.emit(Unit)
+            }
+            return
+        }
+        createPost(content)
+    }
+
+    // Метод для выхода с подтверждением
+    fun signOut() {
+        viewModelScope.launch {
+            _signOutRequested.emit(Unit)
         }
     }
 

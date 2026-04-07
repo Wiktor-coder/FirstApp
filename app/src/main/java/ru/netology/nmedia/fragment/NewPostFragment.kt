@@ -78,7 +78,9 @@ class NewPostFragment : Fragment() {
             val text = binding.edit.text.toString().trim()
             if (text.isNotEmpty()) {
                 enableButtons(false)
-                viewModel.createPost(text)
+                // Используем метод с проверкой аутентификации
+                viewModel.createPostWithAuthCheck(text)
+//                viewModel.createPost(text)
             } else {
                 findNavController().navigateUp()
             }
