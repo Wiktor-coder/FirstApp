@@ -115,7 +115,7 @@ class AppActivity : AppCompatActivity() {
                     R.id.signup -> {
                         Log.d("AppActivity", "Sign up clicked")
                         try {
-                            navController.navigate (R.id.action_feedFragment_to_signInFragment)
+                            navController.navigate(R.id.action_feedFragment_to_signUpFragment)
                             true
                         } catch (e: Exception) {
                             Log.e("AppActivity", "Navigation error", e)

@@ -28,6 +28,11 @@
             app:destination="@id/signInFragment"
             app:popUpTo="@id/feedFragment"
             app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_feedFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment"
+            app:popUpTo="@id/feedFragment"
+            app:popUpToInclusive="false" />
     </fragment>
 
     <fragment
@@ -35,6 +40,12 @@
         android:name="ru.netology.nmedia.fragment.SignInFragment"
         android:label="Sign In"
         tools:layout="@layout/fragment_sign_in" />
+
+    <fragment
+        android:id="@+id/signUpFragment"
+        android:name="ru.netology.nmedia.fragment.SignUpFragment"
+        android:label="Sign Up"
+        tools:layout="@layout/fragment_sign_up" />
 
     <fragment
         android:id="@+id/newPostFragment2"
