@@ -1,7 +1,15 @@
 package ru.netology.nmedia.auth
 
 import android.content.Context
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.dto.PushToken
 
 class AppAuth private constructor(context: Context) {
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
@@ -23,6 +31,8 @@ class AppAuth private constructor(context: Context) {
         } else {
             _authStateFlow = MutableStateFlow(AuthState(id, token))
         }
+
+        sendPushToken(token)
     }
 
     val authStateFlow: StateFlow<AuthState> = _authStateFlow.asStateFlow()
@@ -35,6 +45,8 @@ class AppAuth private constructor(context: Context) {
             putString(tokenKey, token)
             apply()
         }
+
+        sendPushToken()
     }
 
     @Synchronized
@@ -44,7 +56,37 @@ class AppAuth private constructor(context: Context) {
             clear()
             commit()
         }
+
+        sendPushToken()
     }
+    fun sendPushToken(token: String? = null) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val pushToken = token ?: FirebaseMessaging.getInstance().token.await()
+                Log.d("AppAuth", "Sending push token: $pushToken")
+                val response = PostApi.service.sendPushToken(PushToken(pushToken))
+                if (response.isSuccessful) {
+                    Log.d("AppAuth", "Push token sent successfully")
+                } else {
+                    Log.e("AppAuth", "Failed to send push token: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("AppAuth", "Error sending push token", e)
+            }
+        }
+    }
+//    fun sendPushToken(token: String? = null) {
+//        CoroutineScope(EmptyCoroutineContext).launch {
+//            runCatching {
+//                PostApi.service.sendPushToken(
+//                    PushToken(
+//                        token ?: FirebaseMessaging.getInstance().token.await()
+//                    )
+//                )
+//            }
+//                .onFailure { it.printStackTrace() }
+//        }
+//    }
 
     companion object {
         @Volatile

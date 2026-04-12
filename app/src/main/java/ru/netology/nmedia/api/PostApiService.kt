@@ -19,9 +19,9 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
 import ru.netology.nmedia.BuildConfig
-import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.AuthResponse
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.dto.PushToken
 import java.util.concurrent.TimeUnit
 
 const val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
@@ -96,6 +96,8 @@ interface PostApiService {
         @Part file: MultipartBody.Part
     ): Response<AuthResponse>
 
+    @POST("users/push-tokens")
+    suspend fun sendPushToken(@Body token: PushToken): Response<Unit>
 }
 
 // по котлиновски
