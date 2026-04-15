@@ -13,5 +13,8 @@ interface PostListener {
     fun hasVideo(post: Post): Boolean
     fun getVideoUrl(post: Post): String?
     fun onImageClick(imageUrl: String)
+    fun canEdit(post: Post): Boolean = post.ownedByMe
+    fun canRemove(post: Post): Boolean = post.ownedByMe
+
 
 }

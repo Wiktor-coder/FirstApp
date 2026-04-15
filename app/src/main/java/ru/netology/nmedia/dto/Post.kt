@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class Post(
     val id: Long,
+    val authorId: Long,
     val author: String,
     val authorAvatar: String?,
     val published: Long,
@@ -12,5 +13,6 @@ data class Post(
     val shareCount: Int,
     val likedByMe: Boolean = false,
     val video: String? = null,
-    val attachment: Attachment? = null
+    val attachment: Attachment? = null,
+    val ownedByMe: Boolean = false,
 )

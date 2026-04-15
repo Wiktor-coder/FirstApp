@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.dto.Post
@@ -12,11 +13,13 @@ import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import retrofit2.HttpException
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.model.ErrorType
 import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.utils.Result
 import ru.netology.nmedia.utils.Result.*
 
+@ExperimentalCoroutinesApi
 class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDb.getInstance(application).postDao
     private val repository = PostRepositorySQLiteImpl(application.applicationContext, dao)
@@ -40,9 +43,56 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableSharedFlow<String>()
     val error: SharedFlow<String> = _error.asSharedFlow()
 
+    private val _authRequired = MutableSharedFlow<Unit>()
+    val authRequired: SharedFlow<Unit> = _authRequired.asSharedFlow()
+
+    private val _signOutRequested = MutableSharedFlow<Unit>()
+    val signOutRequested: SharedFlow<Unit> = _signOutRequested.asSharedFlow()
+
     init {
         observePosts()
         loadPosts()
+
+        // Обновляем посты при изменении аутентификации
+        viewModelScope.launch {
+            AppAuth.getInstance().authStateFlow.collect {
+                loadPosts(useCache = false) // Перезагружаем посты
+            }
+        }
+    }
+
+    // Проверка аутентификации
+    private fun isAuthenticated(): Boolean {
+        return AppAuth.getInstance().authStateFlow.value.id != 0L
+    }
+
+    // Метод для лайка с проверкой аутентификации
+    fun likeByIdWithAuthCheck(id: Long) {
+        if (!isAuthenticated()) {
+            viewModelScope.launch {
+                _authRequired.emit(Unit)
+            }
+            return
+        }
+        likeById(id)
+    }
+
+    // Метод для создания поста с проверкой аутентификации
+    fun createPostWithAuthCheck(content: String) {
+        if (!isAuthenticated()) {
+            viewModelScope.launch {
+                _authRequired.emit(Unit)
+            }
+            return
+        }
+        createPost(content)
+    }
+
+    // Метод для выхода с подтверждением
+    fun signOut() {
+        viewModelScope.launch {
+            _signOutRequested.emit(Unit)
+        }
     }
 
     private fun observePosts() {
@@ -178,15 +228,17 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             if (content.isNotBlank()) {
                 val newPost = Post(
                     id = 0L,
+                    authorId = 0L,
                     author = "My Post",
                     authorAvatar = null,
                     published = System.currentTimeMillis(),
                     content = content.trim(),
                     likeCount = 0,
                     shareCount = 0,
-                    likedByMe = false,
+                    likedByMe = true,
+                    ownedByMe = true,
                     video = null,
-                    attachment = null
+                    attachment = null,
                 )
 
                 val result = repository.save(newPost)

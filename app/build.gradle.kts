@@ -78,6 +78,8 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
     implementation(libs.cronet.embedded)
+//    // Image picker
+//    implementation(libs.imagepicker)
     ksp(libs.compiler)
     implementation(libs.androidx.cardview)
     ksp(libs.androidx.room.compiler)

@@ -1,18 +1,27 @@
 package ru.netology.nmedia.api
 
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 import retrofit2.http.Body
 import retrofit2.http.DELETE
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import ru.netology.nmedia.BuildConfig
+import ru.netology.nmedia.dto.AuthResponse
 import ru.netology.nmedia.dto.Post
+import ru.netology.nmedia.dto.PushToken
 import java.util.concurrent.TimeUnit
 
 const val BASE_URL = "${BuildConfig.BASE_URL}/api/slow/"
@@ -25,6 +34,15 @@ private val client = OkHttpClient.Builder()
             HttpLoggingInterceptor.Level.NONE // выключаем логи для релиза
         }
     }) // перехватчик логер
+//    .addInterceptor { chain ->
+//        AppAuth.getInstance().authStateFlow.value.token?.let { token ->
+//            val newRequest = chain.request().newBuilder()
+//                .addHeader("Authorization", token)
+//                .build()
+//            return@addInterceptor chain.proceed(newRequest)
+//        }
+//        chain.proceed(chain.request())
+//    }
     .connectTimeout(30, TimeUnit.SECONDS)
     .readTimeout(30, TimeUnit.SECONDS)  // Добавьте readTimeout
     .writeTimeout(30, TimeUnit.SECONDS) // Добавьте writeTimeout
@@ -53,6 +71,33 @@ interface PostApiService {
     @DELETE("posts/{id}")
     fun delete(@Path("id") postId: Long): Call<Unit>
 
+    @FormUrlEncoded
+    @POST("users/authentication")
+    suspend fun authenticate(
+        @Field("login") login: String,
+        @Field("pass") pass: String
+    ): Response<AuthResponse>
+
+    @FormUrlEncoded
+    @POST("users/registration")
+    suspend fun registerUser(
+        @Field("login") login: String,
+        @Field("pass") pass: String,
+        @Field("name") name: String
+    ): Response<AuthResponse>
+
+    // Pro Level - регистрация с аватаркой
+    @Multipart
+    @POST("users/registration")
+    suspend fun registerUserWithPhoto(
+        @Part("login") login: RequestBody,
+        @Part("pass") pass: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part file: MultipartBody.Part
+    ): Response<AuthResponse>
+
+    @POST("users/push-tokens")
+    suspend fun sendPushToken(@Body token: PushToken): Response<Unit>
 }
 
 // по котлиновски

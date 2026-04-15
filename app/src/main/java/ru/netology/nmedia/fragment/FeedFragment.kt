@@ -11,6 +11,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentFeedBinding
@@ -19,11 +20,15 @@ import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.viewmodel.PostViewModel
 import ru.netology.nmedia.adapter.PostAdapter
 import ru.netology.nmedia.adapter.PostListener
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.model.ErrorType
+import ru.netology.nmedia.utils.AuthDialog
+import ru.netology.nmedia.utils.SignOutDialog
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class FeedFragment : Fragment() {
 
-    private val viewModel: PostViewModel by activityViewModels()
+    val viewModel: PostViewModel by activityViewModels()
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -53,14 +58,19 @@ class FeedFragment : Fragment() {
         setupRecyclerView()
         observeData()
         observeErrors()
+        observeAuthEvents()
 
         binding.retryButton.setOnClickListener {
             viewModel.loadPosts()
         }
 
         binding.add.setOnClickListener {
-            findNavController().navigate(R.id.action_feedFragment_to_newPostFragment2)
+            // Используем метод с проверкой аутентификации
+            viewModel.createPostWithAuthCheck("")
         }
+//        binding.add.setOnClickListener {
+//            findNavController().navigate(R.id.action_feedFragment_to_newPostFragment2)
+//        }
     }
 
     private fun setupSwipeRefresh() {
@@ -80,7 +90,10 @@ class FeedFragment : Fragment() {
         val adapter = PostAdapter(
             object : PostListener {
                 override fun onLike(post: Post) {
-                    viewModel.likeById(post.id)
+                    // Используем метод с проверкой аутентификации
+                    viewModel.likeByIdWithAuthCheck(post.id)
+
+//                    viewModel.likeById(post.id)
                 }
 
                 override fun onRemove(post: Post) {
@@ -126,10 +139,28 @@ class FeedFragment : Fragment() {
                 override fun getVideoUrl(post: Post): String? {
                     return viewModel.getVideoUrl(post)
                 }
+
             }
         )
 
         binding.container.adapter = adapter
+    }
+
+    // Наблюдение за событиями аутентификации
+    private fun observeAuthEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.authRequired.collect {
+                // Показываем диалог авторизации
+                AuthDialog().show(parentFragmentManager, AuthDialog.TAG)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.signOutRequested.collect {
+                // Показываем диалог подтверждения выхода
+                SignOutDialog().show(parentFragmentManager, SignOutDialog.TAG)
+            }
+        }
     }
 
     private fun observeData() {

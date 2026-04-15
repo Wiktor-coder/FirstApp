@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ru.netology.nmedia.BuildConfig
 import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dao.PostDao
 import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Attachment
@@ -28,7 +29,13 @@ class PostRepositorySQLiteImpl(
     // Flow для наблюдения за постами
     override fun observePosts(): Flow<List<Post>> {
         return dao.observeAll().map { entities ->
-            entities.map { it.toPost() }
+            val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+            entities.map { entity ->
+                val post = entity.toPost()
+                post.copy(
+                    ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+                )
+            }
         }.flowOn(Dispatchers.IO)
     }
 
@@ -41,9 +48,20 @@ class PostRepositorySQLiteImpl(
             val response = PostApi.service.getAll().execute()
             if (response.isSuccessful) {
                 val posts = response.body() ?: emptyList()
+
+                // Получаем текущего пользователя
+                val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+
+                // Устанавливаем ownedByMe на основе текущего пользователя
+                val postsWithOwnership = posts.map { post ->
+                    post.copy(
+                        ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+                    )
+                }
+
                 val postEntities = posts.map { PostEntity.fromPost(it) }
                 dao.saveAll(postEntities)
-                Result.Success(posts)
+                Result.Success(postsWithOwnership)
             } else {
                 Result.Error("Ошибка ${response.code()}")
             }
@@ -62,8 +80,13 @@ class PostRepositorySQLiteImpl(
             if (response.isSuccessful) {
                 val post = response.body()
                 if (post != null) {
-                    dao.save(PostEntity.fromPost(post))
-                    Result.Success(post)
+                    // Сохраняем ownedByMe
+                    val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                    val postWithOwnership = post.copy(
+                        ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+                    )
+                    dao.save(PostEntity.fromPost(postWithOwnership))
+                    Result.Success(postWithOwnership)
                 } else {
                     Result.Error("Пустой ответ от сервера")
                 }
@@ -85,8 +108,12 @@ class PostRepositorySQLiteImpl(
             if (response.isSuccessful) {
                 val post = response.body()
                 if (post != null) {
-                    dao.save(PostEntity.fromPost(post))
-                    Result.Success(post)
+                    val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                    val postWithOwnership = post.copy(
+                        ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+                    )
+                    dao.save(PostEntity.fromPost(postWithOwnership))
+                    Result.Success(postWithOwnership)
                 } else {
                     Result.Error("Пустой ответ от сервера")
                 }
@@ -119,8 +146,12 @@ class PostRepositorySQLiteImpl(
     override suspend fun save(post: Post): Result<Post> = withContext(Dispatchers.IO) {
         return@withContext try {
             if (!isNetworkAvailable()) {
+                val currentUserId = AppAuth.getInstance().authStateFlow.value.id
                 // Сохраняем локально для офлайн режима
-                val savedPost = post.copy(id = System.currentTimeMillis()) // Временный ID
+                val savedPost = post.copy(
+                    id = System.currentTimeMillis(),
+                    ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+                    ) // Временный ID
                 dao.save(PostEntity.fromPost(savedPost))
                 Result.Success(savedPost)
             } else {
@@ -128,8 +159,12 @@ class PostRepositorySQLiteImpl(
                 if (response.isSuccessful) {
                     val savedPost = response.body()
                     if (savedPost != null) {
-                        dao.save(PostEntity.fromPost(savedPost))
-                        Result.Success(savedPost)
+                        val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                        val postWithOwnership = savedPost.copy(
+                            ownedByMe = savedPost.authorId == currentUserId && currentUserId != 0L
+                        )
+                        dao.save(PostEntity.fromPost(postWithOwnership))
+                        Result.Success(postWithOwnership)
                     } else {
                         Result.Error("Пустой ответ от сервера")
                     }
@@ -143,7 +178,15 @@ class PostRepositorySQLiteImpl(
     }
 
     // Вспомогательные функции
-    fun getLocalPosts(): List<Post> = dao.getAll().map { it.toPost() }
+    fun getLocalPosts(): List<Post> {
+        val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+        return dao.getAll().map { entity ->
+            val post = entity.toPost()
+            post.copy(
+                ownedByMe = post.authorId == currentUserId && currentUserId != 0L
+            )
+        }
+    }
 
     fun getAvatarUrl(avatarPath: String?): String? {
         return if (!avatarPath.isNullOrBlank()) {
