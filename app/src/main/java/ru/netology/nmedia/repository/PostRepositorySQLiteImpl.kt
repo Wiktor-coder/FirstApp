@@ -189,41 +189,6 @@ class PostRepositorySQLiteImpl(
         }
     }
 
-    fun getAvatarUrl(avatarPath: String?): String? {
-        return if (!avatarPath.isNullOrBlank()) {
-            "${BuildConfig.BASE_URL}/avatars/${avatarPath}"
-        } else null
-    }
-
-    fun getAttachmentUrl(attachment: Attachment?): String? {
-        return when (attachment?.type) {
-            AttachmentType.IMAGE -> {
-                // Проверяем, не содержит ли URL уже полный путь
-                val url = attachment.url
-                if (url.startsWith("http://") || url.startsWith("https://")) {
-                    url
-                } else {
-                    "${BuildConfig.BASE_URL}/media/${url}"
-                }
-            }
-            AttachmentType.VIDEO -> {
-                if (attachment.url.startsWith("http://") || attachment.url.startsWith("https://")) {
-                    attachment.url
-                } else {
-                    "${BuildConfig.BASE_URL}/video/${attachment.url}"
-                }
-            }
-            AttachmentType.AUDIO -> {
-                if (attachment.url.startsWith("http://") || attachment.url.startsWith("https://")) {
-                    attachment.url
-                } else {
-                    "${BuildConfig.BASE_URL}/audio/${attachment.url}"
-                }
-            }
-            null -> null
-        }
-    }
-
     @SuppressLint("ServiceCast")
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
