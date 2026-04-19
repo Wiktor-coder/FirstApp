@@ -101,11 +101,11 @@ interface PostApiService {
 }
 
 // по котлиновски
-object PostApi {
-    val service by lazy {
-        retrofit.create<PostApiService>()
-    }
-}
+//object PostApi {
+//    val service by lazy {
+//        retrofit.create<PostApiService>()
+//    }
+//}
 // альтернатива
 //object PostApi {
 //    val service: PostApiService by lazy {

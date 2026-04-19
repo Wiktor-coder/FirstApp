@@ -22,20 +22,27 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.databinding.FragmentSinglePostBinding
 import ru.netology.nmedia.dto.AttachmentType
 import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.toFormattedDate
 import ru.netology.nmedia.viewmodel.PostViewModel
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-
+import dagger.hilt.android.AndroidEntryPoint
+import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.dto.Attachment
+import ru.netology.nmedia.utils.MediaUtils.getAttachmentUrl
+import ru.netology.nmedia.utils.MediaUtils.getAvatarUrl
+import javax.inject.Inject
+@AndroidEntryPoint
 class SinglePostFragment : Fragment() {
 
     private var _binding: FragmentSinglePostBinding? = null
     private val binding get() = _binding!!
-    private val repository: PostRepositorySQLiteImpl by lazy {
-        PostRepositorySQLiteImpl(requireContext())
-    }
+//    private val repository: PostRepositorySQLiteImpl by lazy {
+//        PostRepositorySQLiteImpl(requireContext())
+//    }
     private val viewModel by activityViewModels<PostViewModel>()
+    @Inject
+    lateinit var appAuth: AppAuth
 
     // ДОБАВЛЯЕМ onCreateView - это обязательный метод!
     override fun onCreateView(
@@ -112,7 +119,7 @@ class SinglePostFragment : Fragment() {
 
     private fun loadAvatar(avatarPath: String?) {
         try {
-            val avatarUrl = repository.getAvatarUrl(avatarPath)
+            val avatarUrl = getAvatarUrl(avatarPath)
 
             Glide.with(binding.avatar.context)
                 .load(avatarUrl)
@@ -127,8 +134,18 @@ class SinglePostFragment : Fragment() {
     }
 
     private fun showMenu(post: Post) {
+        // Проверка аутентификации через appAuth
+        val isAuthenticated = appAuth.authStateFlow.value.id != 0L
+        val canEdit = isAuthenticated && post.ownedByMe
+        val canRemove = isAuthenticated && post.ownedByMe
+
+        if (!canEdit && !canRemove) return
+
         PopupMenu(requireContext(), binding.menu).apply {
             inflate(R.menu.post_menu)
+            menu.findItem(R.id.edit).isVisible = canEdit
+            menu.findItem(R.id.remove).isVisible = canRemove
+
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.edit -> {
@@ -156,7 +173,7 @@ class SinglePostFragment : Fragment() {
             videoContainer.visibility = View.GONE
 
             post.attachment?.let { attachment ->
-                val attachmentUrl = repository.getAttachmentUrl(attachment)
+                val attachmentUrl = getAttachmentUrl(attachment)
                 val uri = attachmentUrl?.toUri()
 
                 when (attachment.type) {

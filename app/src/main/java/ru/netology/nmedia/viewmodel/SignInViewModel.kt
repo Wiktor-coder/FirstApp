@@ -2,17 +2,22 @@ package ru.netology.nmedia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import javax.inject.Inject
 
-// SignInViewModel.kt
-class SignInViewModel : ViewModel() {
+@HiltViewModel
+class SignInViewModel @Inject constructor(
+    private val postApiService: PostApiService,
+    private val appAuth: AppAuth
+) : ViewModel() {
     private val _authState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val authState: StateFlow<AuthUiState> = _authState.asStateFlow()
 
@@ -26,13 +31,13 @@ class SignInViewModel : ViewModel() {
             _authState.value = AuthUiState.Loading
 
             try {
-                val response = PostApi.service.authenticate(login, password)//.execute()
+                val response = postApiService.authenticate(login, password)//.execute()
 
                 if (response.isSuccessful) {
                     val authResponse = response.body()
                     if (authResponse != null) {
                         // Сохраняем в AppAuth
-                        AppAuth.getInstance().setAuth(authResponse.id, authResponse.token)
+                       appAuth.setAuth(authResponse.id, authResponse.token)
                         _authState.value = AuthUiState.Success
                     } else {
                         _authState.value = AuthUiState.Error("Пустой ответ от сервера")

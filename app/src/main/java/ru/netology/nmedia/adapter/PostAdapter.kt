@@ -3,11 +3,13 @@ package ru.netology.nmedia.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
+import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.databinding.CardPostBinding
 import ru.netology.nmedia.dto.Post
 
 class PostAdapter(
-    private val listener: PostListener
+    private val listener: PostListener,
+    private val appAuth: AppAuth
 ) : ListAdapter<Post, PostViewHolder>(PostDiffItemCallback()) {
 
     override fun onCreateViewHolder(
@@ -20,7 +22,7 @@ class PostAdapter(
             parent,
             false
         )
-        return PostViewHolder(binding, listener)
+        return PostViewHolder(binding, listener, appAuth)
     }
 
     override fun onBindViewHolder(

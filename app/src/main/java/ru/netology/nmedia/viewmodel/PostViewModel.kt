@@ -1,28 +1,31 @@
 package ru.netology.nmedia.viewmodel
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import ru.netology.nmedia.dto.Post
-import ru.netology.nmedia.db.AppDb
-import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import retrofit2.HttpException
 import ru.netology.nmedia.auth.AppAuth
+import ru.netology.nmedia.dto.Post
 import ru.netology.nmedia.model.ErrorType
 import ru.netology.nmedia.model.FeedModel
+import ru.netology.nmedia.repository.PostRepository
+import ru.netology.nmedia.repository.PostRepositorySQLiteImpl
 import ru.netology.nmedia.utils.Result
 import ru.netology.nmedia.utils.Result.*
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import javax.inject.Inject
 
+@HiltViewModel
 @ExperimentalCoroutinesApi
-class PostViewModel(application: Application) : AndroidViewModel(application) {
-    private val dao = AppDb.getInstance(application).postDao
-    private val repository = PostRepositorySQLiteImpl(application.applicationContext, dao)
+class PostViewModel @Inject constructor(
+    private val repository: PostRepository,
+    private val appAuth: AppAuth,
+) : ViewModel() {
 
     // Состояние UI с использованием StateFlow
     private val _data = MutableStateFlow(FeedModel())
@@ -55,7 +58,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
         // Обновляем посты при изменении аутентификации
         viewModelScope.launch {
-            AppAuth.getInstance().authStateFlow.collect {
+            appAuth.authStateFlow.collect {
                 loadPosts(useCache = false) // Перезагружаем посты
             }
         }
@@ -63,7 +66,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
     // Проверка аутентификации
     private fun isAuthenticated(): Boolean {
-        return AppAuth.getInstance().authStateFlow.value.id != 0L
+        return appAuth.authStateFlow.value.id != 0L
     }
 
     // Метод для лайка с проверкой аутентификации

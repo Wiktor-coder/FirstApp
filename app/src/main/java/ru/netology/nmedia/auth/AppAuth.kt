@@ -3,15 +3,22 @@ package ru.netology.nmedia.auth
 import android.content.Context
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.dto.PushToken
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppAuth private constructor(context: Context) {
+@Singleton
+class AppAuth @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val postApiService: PostApiService
+    ) {
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
     private val idKey = "id"
     private val tokenKey = "token"
@@ -64,7 +71,7 @@ class AppAuth private constructor(context: Context) {
             try {
                 val pushToken = token ?: FirebaseMessaging.getInstance().token.await()
                 Log.d("AppAuth", "Sending push token: $pushToken")
-                val response = PostApi.service.sendPushToken(PushToken(pushToken))
+                val response = postApiService.sendPushToken(PushToken(pushToken))
                 if (response.isSuccessful) {
                     Log.d("AppAuth", "Push token sent successfully")
                 } else {
@@ -88,22 +95,22 @@ class AppAuth private constructor(context: Context) {
 //        }
 //    }
 
-    companion object {
-        @Volatile
-        private var instance: AppAuth? = null
-
-        fun getInstance(): AppAuth = synchronized(this) {
-            instance ?: throw IllegalStateException(
-                "AppAuth is not initialized, you must call AppAuth.initializeApp(Context context) first."
-            )
-        }
-
-        fun initApp(context: Context): AppAuth = instance ?: synchronized(this) {
-            instance ?: buildAuth(context).also { instance = it }
-        }
-
-        private fun buildAuth(context: Context): AppAuth = AppAuth(context)
-    }
+//    companion object {
+//        @Volatile
+//        private var instance: AppAuth? = null
+//
+//        fun getInstance(): AppAuth = synchronized(this) {
+//            instance ?: throw IllegalStateException(
+//                "AppAuth is not initialized, you must call AppAuth.initializeApp(Context context) first."
+//            )
+//        }
+//
+//        fun initApp(context: Context): AppAuth = instance ?: synchronized(this) {
+//            instance ?: buildAuth(context).also { instance = it }
+//        }
+//
+//        private fun buildAuth(context: Context): AppAuth = AppAuth(context)
+//    }
 }
 
 data class AuthState(val id: Long = 0, val token: String? = null)

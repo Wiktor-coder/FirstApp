@@ -14,6 +14,7 @@ interface PostRepository {
 
     // Flow для получения данных
     fun observePosts(): Flow<List<Post>>
+    fun getLocalPosts(): List<Post>
 
 //    fun getLocalPosts(): List<Post>
 //    fun getAllAsync(callback: PostCallback<List<Post>>)

@@ -2,6 +2,7 @@ package ru.netology.nmedia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,13 +11,18 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
 import java.io.File
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import javax.inject.Inject
 
-class SignUpViewModel : ViewModel() {
+@HiltViewModel
+class SignUpViewModel @Inject constructor(
+    private val postApiService: PostApiService,
+    private val appAuth: AppAuth
+) : ViewModel() {
     private val _uiState = MutableStateFlow<SignUpUiState>(SignUpUiState.Idle)
     val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
@@ -69,16 +75,16 @@ class SignUpViewModel : ViewModel() {
                         avatarFile.asRequestBody("image/*".toMediaType())
                     )
 
-                    PostApi.service.registerUserWithPhoto(loginBody, passBody, nameBody, filePart)
+                   postApiService.registerUserWithPhoto(loginBody, passBody, nameBody, filePart)
                 } else {
                     // Обычная регистрация
-                    PostApi.service.registerUser(login, password, name)
+                    postApiService.registerUser(login, password, name)
                 }
 
                 if (response.isSuccessful) {
                     val authResponse = response.body()
                     if (authResponse != null) {
-                        AppAuth.getInstance().setAuth(authResponse.id, authResponse.token)
+                        appAuth.setAuth(authResponse.id, authResponse.token)
                         _uiState.value = SignUpUiState.Success
                     } else {
                         _uiState.value = SignUpUiState.Error("Пустой ответ от сервера")

@@ -12,10 +12,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import ru.netology.nmedia.BuildConfig
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dao.PostDao
-import ru.netology.nmedia.db.AppDb
 import ru.netology.nmedia.dto.Attachment
 import ru.netology.nmedia.dto.AttachmentType
 import ru.netology.nmedia.dto.Post
@@ -23,13 +22,15 @@ import ru.netology.nmedia.entity.PostEntity
 
 class PostRepositorySQLiteImpl(
     private val context: Context,
-    private val dao: PostDao = AppDb.getInstance(context).postDao
+    private val dao: PostDao,
+    private val postApiService: PostApiService,
+    private val appAuth: AppAuth,
 ) : PostRepository {
 
     // Flow для наблюдения за постами
     override fun observePosts(): Flow<List<Post>> {
         return dao.observeAll().map { entities ->
-            val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+            val currentUserId = appAuth.authStateFlow.value.id
             entities.map { entity ->
                 val post = entity.toPost()
                 post.copy(
@@ -45,12 +46,12 @@ class PostRepositorySQLiteImpl(
         }
 
         return@withContext try {
-            val response = PostApi.service.getAll().execute()
+            val response = postApiService.getAll().execute()
             if (response.isSuccessful) {
                 val posts = response.body() ?: emptyList()
 
                 // Получаем текущего пользователя
-                val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                val currentUserId = appAuth.authStateFlow.value.id
 
                 // Устанавливаем ownedByMe на основе текущего пользователя
                 val postsWithOwnership = posts.map { post ->
@@ -76,12 +77,12 @@ class PostRepositorySQLiteImpl(
         }
 
         return@withContext try {
-            val response = PostApi.service.likeById(id).execute()
+            val response = postApiService.likeById(id).execute()
             if (response.isSuccessful) {
                 val post = response.body()
                 if (post != null) {
                     // Сохраняем ownedByMe
-                    val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                    val currentUserId = appAuth.authStateFlow.value.id
                     val postWithOwnership = post.copy(
                         ownedByMe = post.authorId == currentUserId && currentUserId != 0L
                     )
@@ -104,11 +105,11 @@ class PostRepositorySQLiteImpl(
         }
 
         return@withContext try {
-            val response = PostApi.service.unLikeById(id).execute()
+            val response = postApiService.unLikeById(id).execute()
             if (response.isSuccessful) {
                 val post = response.body()
                 if (post != null) {
-                    val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                    val currentUserId = appAuth.authStateFlow.value.id
                     val postWithOwnership = post.copy(
                         ownedByMe = post.authorId == currentUserId && currentUserId != 0L
                     )
@@ -131,7 +132,7 @@ class PostRepositorySQLiteImpl(
         }
 
         return@withContext try {
-            val response = PostApi.service.delete(id).execute()
+            val response = postApiService.delete(id).execute()
             if (response.isSuccessful) {
                 dao.removeById(id)
                 Result.Success(Unit)
@@ -146,7 +147,7 @@ class PostRepositorySQLiteImpl(
     override suspend fun save(post: Post): Result<Post> = withContext(Dispatchers.IO) {
         return@withContext try {
             if (!isNetworkAvailable()) {
-                val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                val currentUserId = appAuth.authStateFlow.value.id
                 // Сохраняем локально для офлайн режима
                 val savedPost = post.copy(
                     id = System.currentTimeMillis(),
@@ -155,11 +156,11 @@ class PostRepositorySQLiteImpl(
                 dao.save(PostEntity.fromPost(savedPost))
                 Result.Success(savedPost)
             } else {
-                val response = PostApi.service.savePost(post).execute()
+                val response =postApiService.savePost(post).execute()
                 if (response.isSuccessful) {
                     val savedPost = response.body()
                     if (savedPost != null) {
-                        val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+                        val currentUserId = appAuth.authStateFlow.value.id
                         val postWithOwnership = savedPost.copy(
                             ownedByMe = savedPost.authorId == currentUserId && currentUserId != 0L
                         )
@@ -178,8 +179,8 @@ class PostRepositorySQLiteImpl(
     }
 
     // Вспомогательные функции
-    fun getLocalPosts(): List<Post> {
-        val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+    override fun getLocalPosts(): List<Post> {
+        val currentUserId = appAuth.authStateFlow.value.id
         return dao.getAll().map { entity ->
             val post = entity.toPost()
             post.copy(

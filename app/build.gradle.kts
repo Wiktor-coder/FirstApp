@@ -1,14 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.google.gms.google.services)
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-    }
+    alias(libs.plugins.dagger.hilt.android)
 }
 
 android {
@@ -47,11 +44,16 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 //    kotlinOptions {
-//        jvmTarget = "11"
+//        jvmTarget = "17"
 //    }
 }
 
@@ -78,8 +80,6 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
     implementation(libs.cronet.embedded)
-//    // Image picker
-//    implementation(libs.imagepicker)
     ksp(libs.compiler)
     implementation(libs.androidx.cardview)
     ksp(libs.androidx.room.compiler)
@@ -92,7 +92,14 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // Room with coroutines
     implementation(libs.androidx.room.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // Dagger Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.fragment)
+    // For ViewModel injection
+    implementation(libs.androidx.hilt.navigation.compose)
 }

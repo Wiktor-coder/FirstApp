@@ -15,6 +15,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,14 +25,19 @@ import org.json.JSONException
 import org.json.JSONObject
 import ru.netology.nmedia.R
 import ru.netology.nmedia.activity.AppActivity
-import ru.netology.nmedia.api.PostApi
+import ru.netology.nmedia.api.PostApiService
 import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.dto.PushToken
 import kotlin.random.Random
 
 private const val MAX_NOTIFICATION_CONTENT_LENGTH = 1000
-
+@AndroidEntryPoint
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var postApiService: PostApiService
+    @Inject
+    lateinit var appAuth: AppAuth
 
     private val action = "action"
     private val content = "content"
@@ -96,7 +103,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             }
         }
 
-        val currentUserId = AppAuth.getInstance().authStateFlow.value.id
+        val currentUserId = appAuth.authStateFlow.value.id
 
         Log.d("FCM", "RecipientId from server: $recipientId")
         Log.d("FCM", "Current User ID: $currentUserId")
@@ -233,7 +240,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 Log.d("FCM", "Re-sending push token: $token")
 
                 // Отправляем токен на сервер
-                val response = PostApi.service.sendPushToken(PushToken(token))
+                val response = postApiService.sendPushToken(PushToken(token))
                 if (response.isSuccessful) {
                     Log.d("FCM", "Push token re-sent successfully")
                 } else {
@@ -248,7 +255,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendPushTokenToServer(token: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = PostApi.service.sendPushToken(PushToken(token))
+                val response = postApiService.sendPushToken(PushToken(token))
                 if (response.isSuccessful) {
                     Log.d("FCM", "Push token sent successfully")
                 } else {

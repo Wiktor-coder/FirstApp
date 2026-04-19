@@ -20,6 +20,8 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
 import ru.netology.nmedia.auth.AppAuth
@@ -27,9 +29,12 @@ import ru.netology.nmedia.databinding.ActivityAppBinding
 import ru.netology.nmedia.fragment.FeedFragment
 import ru.netology.nmedia.fragment.NewPostFragment.Companion.textArg
 import ru.netology.nmedia.viewmodel.AuthViewModel
-
+@AndroidEntryPoint
 class AppActivity : AppCompatActivity() {
     private val viewModel: AuthViewModel by viewModels()
+
+    @Inject
+    lateinit var appAuth: AppAuth
     // Лаунчер для запроса разрешений
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -133,7 +138,7 @@ class AppActivity : AppCompatActivity() {
                             currentFragment.viewModel.signOut()
                         } else {
                             // Если текущий фрагмент не FeedFragment, просто выходим
-                            AppAuth.getInstance().removeAuth()
+                            appAuth.removeAuth()
                         }
                         true
                     }
@@ -144,7 +149,7 @@ class AppActivity : AppCompatActivity() {
         })
 
         lifecycleScope.launch {
-            AppAuth.getInstance().authStateFlow.collect {
+            appAuth.authStateFlow.collect {
                 invalidateOptionsMenu()
             }
         }

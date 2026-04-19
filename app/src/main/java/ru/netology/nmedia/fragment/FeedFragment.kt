@@ -11,6 +11,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import ru.netology.nmedia.R
@@ -24,11 +25,16 @@ import ru.netology.nmedia.auth.AppAuth
 import ru.netology.nmedia.model.ErrorType
 import ru.netology.nmedia.utils.AuthDialog
 import ru.netology.nmedia.utils.SignOutDialog
+import javax.inject.Inject
 
+@AndroidEntryPoint
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedFragment : Fragment() {
 
     val viewModel: PostViewModel by activityViewModels()
+
+    @Inject
+    lateinit var appAuth: AppAuth
     private var _binding: FragmentFeedBinding? = null
     private val binding get() = _binding!!
 
@@ -140,7 +146,7 @@ class FeedFragment : Fragment() {
                     return viewModel.getVideoUrl(post)
                 }
 
-            }
+            }, appAuth
         )
 
         binding.container.adapter = adapter
